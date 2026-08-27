@@ -518,7 +518,7 @@
   function tickAppChrono() {
     var c = el.chrono;
     if (MODE === 'jour') {
-      c.classList.remove('low');
+      c.classList.remove('low', 'mara');
       if (jour.done) {
         c.hidden = jour.secs == null;
         if (jour.secs != null) c.textContent = '⏱ ' + fmtSecs(jour.secs);
@@ -527,7 +527,7 @@
         c.textContent = '⏱ ' + fmtSecs((Date.now() - jour.t0) / 1000);
       } else c.hidden = true;
     } else if (MODE === 'duel') {
-      c.classList.remove('low');
+      c.classList.remove('low', 'mara');
       if (!duel) { c.hidden = true; return; }
       if (duel.done) {
         c.hidden = duel.secs == null;
@@ -546,6 +546,8 @@
       }
       c.hidden = false;
       c.textContent = '⏳ ' + fmtSecs(rem);
+      c.classList.add('mara');
+      c.style.setProperty('--t', Math.min(1, rem / ROUND_SECS)); // le fond de la pastille = barre de temps
       c.classList.toggle('low', rem <= 15);
     }
   }
