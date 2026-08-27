@@ -197,6 +197,46 @@
     #marathon-bar button { font-size: 11px; padding: 3px 7px; }
   }
 
+  /* ── Sélecteur de difficulté (entraînement libre) : la planche de vignettes ── */
+  #diff-picker {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 7px;
+    margin: 0 2px 14px;
+  }
+  #diff-picker[hidden] { display: none; }
+  #diff-picker .dp-title {
+    grid-column: 1 / -1; text-align: center;
+    font-family: var(--font-cond); font-weight: 700; font-size: 11px;
+    letter-spacing: .16em; text-transform: uppercase; opacity: .55;
+    margin-bottom: 1px;
+  }
+  .diff-chip {
+    font-family: var(--font-cond); text-align: center;
+    background: var(--paper); color: var(--ink);
+    border: 2px solid var(--ink); border-radius: 5px;
+    padding: 8px 6px 7px; cursor: pointer;
+    box-shadow: 2px 3px 0 rgba(33,30,25,.18);
+    transition: background .18s, color .18s, transform .16s, box-shadow .16s;
+  }
+  .diff-chip b {
+    display: block; font-weight: 700; font-size: 15px;
+    letter-spacing: .09em; text-transform: uppercase;
+  }
+  .diff-chip span { display: block; font-size: 11px; font-weight: 600; opacity: .62; margin-top: 2px; }
+  .diff-chip[aria-pressed="true"] {
+    background: repeating-linear-gradient(90deg, var(--grass-a) 0 9px, var(--grass-b) 9px 18px);
+    color: var(--sticker-border);
+    border-color: var(--green-deep);
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.22), 2.5px 3.5px 0 rgba(33,30,25,.26);
+    transform: rotate(-.8deg) scale(1.03);
+    text-shadow: 1px 1px 0 rgba(33,30,25,.32);
+  }
+  .diff-chip[aria-pressed="true"] span { opacity: .92; text-shadow: none; }
+  .diff-chip:active { transform: translate(1px,2px); box-shadow: none; }
+  @media (hover: hover) {
+    .diff-chip:hover:not([aria-pressed="true"]) { transform: translateY(-1.5px); box-shadow: 2px 4.5px 0 rgba(33,30,25,.26); }
+  }
+  .diff-chip:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
   /* ── Indice de départ : billet vert ── */
   #start-hint {
     margin: 0 2px 14px; padding: 10px 14px;
@@ -554,6 +594,8 @@
   }
   #duel-intro[hidden] { display: none; }
   #duel-intro p { font-size: 14px; line-height: 1.5; max-width: 40ch; }
+  #duel-intro .di-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  #duel-intro #btn-duel-expert { background: linear-gradient(178deg, #2e2a24, var(--ink)); border-color: var(--ink); box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.4), 2px 3px 0 rgba(33,30,25,.25); }
   #duel-intro button {
     font-family: var(--font-display); font-size: 15px;
     color: var(--sticker-border);
@@ -719,8 +761,15 @@
     <span class="lg n"></span> non. La flèche indique si le mystère est plus vieux ↑ ou plus jeune ↓.
     Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
     <p><strong>☀️ Le jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
-    <strong>🏆 Marathon</strong> : la même séquence de mystères pour tout le monde, une tentative classée par jour — <strong>⏳ 90 secondes par joueur</strong>, la série grimpe jusqu'au premier raté (ou au temps écoulé), puis entraînement libre à volonté.
-    <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur, envoie-le à un pote — à égalité d'essais, le plus rapide gagne.</p>
+    <strong>🏆 Marathon</strong> : d'abord la tentative <strong>classée</strong> du jour — même séquence de stars pour tout le monde,
+    ⏳ 90 s par joueur (le chrono, c'est l'anti-triche du classement), la série grimpe jusqu'au premier raté.
+    Ensuite, <strong>entraînement libre</strong> en 4 difficultés : <strong>Facile</strong> (stars, sans chrono),
+    <strong>Moyen</strong> (stars, 90 s — les règles du classé), <strong>Difficile</strong> (toute la base, sans chrono),
+    <strong>Élite</strong> (toute la base, 90 s — la course contre la montre). Records et podiums séparés par difficulté.
+    <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur — stars ou expert (toute la base) —, envoie-le à un pote ;
+    à égalité d'essais, le plus rapide gagne.</p>
+    <p>🎓 Quand le mystère n'est <em>pas</em> une star (Difficile, Élite, duel expert), son
+    <strong>championnat est offert dès 2 essais</strong> : un joueur pointu doit rester trouvable par déduction.</p>
     <p>🔎 <strong>L'enquête</strong> (sous les pastilles d'essais) fait la déduction à ta place : elle accumule tout ce que
     tes essais ont <em>prouvé</em> — nation ou confédération, championnat, club, postes éliminés, et la fourchette d'âge
     calculée d'après les flèches. Un coup d'œil suffit, plus besoin de relire toute la grille.</p>
@@ -738,10 +787,23 @@
     <button id="btn-abandon">Abandonner</button>
   </div>
 
+  <div id="diff-picker" hidden>
+    <div class="dp-title">🎲 Difficulté de l'entraînement</div>
+    <button class="diff-chip" data-d="facile"><b>Facile</b><span>⭐ stars · sans chrono</span></button>
+    <button class="diff-chip" data-d="moyen"><b>Moyen</b><span>⭐ stars · ⏳ 90 s</span></button>
+    <button class="diff-chip" data-d="difficile"><b>Difficile</b><span>🌍 toute la base · sans chrono</span></button>
+    <button class="diff-chip" data-d="elite"><b>Élite</b><span>🌍 toute la base · ⏳ 90 s</span></button>
+  </div>
+
   <div id="duel-intro" hidden>
     <p>⚔️ <strong>Le duel</strong> : tu joues un mystère tiré au sort, puis tu envoies le lien-défi à un pote.
     Il affronte <em>le même joueur</em> — et le verdict tombe.</p>
-    <button id="btn-duel-new">LANCER UN DUEL</button>
+    <div class="di-btns">
+      <button id="btn-duel-new">⭐ DUEL STARS</button>
+      <button id="btn-duel-expert">🌍 DUEL EXPERT</button>
+    </div>
+    <p style="font-size:12px;opacity:.65">Expert : le mystère peut être n'importe lequel des ~4 700 joueurs —
+    le championnat est offert dès 2 essais.</p>
   </div>
 
   <div id="start-hint"></div>
@@ -804,7 +866,7 @@
   </div>
 
   <div id="podium" hidden>
-    <h2>🏅 Tes meilleures séries</h2>
+    <h2>🏅 Tes meilleures séries <span id="podium-diff"></span></h2>
     <ol id="podium-list"></ol>
   </div>
 
@@ -822,8 +884,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=7"></script>
-<script src="config.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="data.js?v=8"></script>
+<script src="config.js?v=8"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

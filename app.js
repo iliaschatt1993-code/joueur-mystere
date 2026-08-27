@@ -159,7 +159,17 @@
   var PUZZLE_NUM = daysBetween(EPOCH, DAY) + 1;
   var AGE_YEAR = new Date().getFullYear();
   function ageOf(p) { return AGE_YEAR - p[7]; }
-  var ROUND_SECS = 90; // marathon : temps par joueur (anti-triche : pas de réflexion infinie)
+  var ROUND_SECS = 90; // marathon CLASSÉ : temps par joueur (anti-triche : pas de réflexion infinie)
+  // Difficultés de l'entraînement libre. Le classé, lui, est identique pour
+  // tout le monde (stars + 90 s) : un classement n'a de sens qu'à règles égales.
+  var DIFFS = {
+    facile:    { label: 'Facile',    tous: false, secs: null },
+    moyen:     { label: 'Moyen',     tous: false, secs: 90 },
+    difficile: { label: 'Difficile', tous: true,  secs: null },
+    elite:     { label: 'Élite',     tous: true,  secs: 90 }
+  };
+  var diff = load('jm-diff', 'facile');
+  if (!DIFFS[diff]) diff = 'facile';
   function fmtSecs(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
   function norm(s) {
@@ -171,6 +181,7 @@
   var STAR_IDX = [];
   for (var _i = 0; _i < DATA.length; _i++) if (DATA[_i][8] === 1) STAR_IDX.push(_i);
   function randomStar() { return STAR_IDX[Math.floor(Math.random() * STAR_IDX.length)]; }
+  function randomAny() { return Math.floor(Math.random() * DATA.length); }
   function findPlayer(name) {
     var n = norm(name);
     var i = NORMS.indexOf(n);
@@ -181,6 +192,7 @@
   // ── Éléments ──
   var el = {};
   ['puzzle-meta', 'tab-jour', 'tab-marathon', 'tab-duel', 'marathon-bar', 'mb-label', 'mb-serie', 'mb-best', 'btn-abandon',
+   'diff-picker', 'podium-diff', 'btn-duel-expert',
    'start-hint', 'guess-zone', 'guess-input', 'btn-guess', 'suggestions', 'notice', 'chrono', 'tries', 'notes', 'board',
    'round-banner', 'hint', 'duel-intro', 'btn-duel-new', 'endcard', 'end-visual', 'end-verdict', 'end-player', 'end-desc', 'end-streak',
    'end-social', 'btn-again', 'btn-share', 'duel-share', 'duel-url', 'btn-copy-duel', 'btn-send-duel', 'wa-duel', 'copy-feedback', 'countdown',
@@ -189,7 +201,7 @@
    'pseudo-dialog', 'pseudo-input', 'btn-pseudo-ok', 'storage-warn', 'data-count'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
-  el['data-count'].textContent = DATA.length.toLocaleString('fr-BE') + ' joueurs dans la recherche (tous proposables comme essais) · le mystère est toujours l’une des ' + STAR_IDX.length + ' stars';
+  el['data-count'].textContent = DATA.length.toLocaleString('fr-BE') + ' joueurs · mystères : ' + STAR_IDX.length + ' stars (jour, classé, facile/moyen) ou toute la base (difficile, élite, duel expert)';
   el['puzzle-meta'].textContent =
     'N°' + PUZZLE_NUM + ' · ' + new Date(DAY + 'T12:00:00').toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -214,16 +226,34 @@
   var mday = loadJSON('jm-mday-' + DAY, { serie: 0, g: [], done: false });
   // Entraînement libre (après le classé du jour) : aléatoire, illimité
   var run = loadJSON('jm-run', null);
-  var mBest = parseInt(load('jm-mbest', '0'), 10) || 0;
   var podium = loadJSON('jm-podium', []);
   var recent = loadJSON('jm-recent', []);
+  // Migration : l'ancien record unique devient le record « moyen » (mêmes règles)
+  if (load('jm-mbest', null) !== null && load('jm-mbest-moyen', null) === null) {
+    save('jm-mbest-moyen', load('jm-mbest', '0'));
+  }
 
   function mdayTarget() { return DATA[mdayOrder[mday.serie % mdayOrder.length]]; }
   function ranked() { return !mday.done; } // le marathon est classé tant que la tentative du jour n'est pas finie
+  // Le classé partage les règles du « moyen » : record et podium communs
+  function diffKey(rankedFlag) { return rankedFlag ? 'moyen' : diff; }
+  function getBest() { return parseInt(load('jm-mbest-' + diffKey(ranked()), '0'), 10) || 0; }
+  function recordSerie(s, dk) {
+    if (s <= 0) return false;
+    podium.push({ s: s, d: DAY, k: dk });
+    podium.sort(function (a, b) { return b.s - a.s; });
+    podium = podium.slice(0, 40);
+    save('jm-podium', JSON.stringify(podium));
+    var key = 'jm-mbest-' + dk;
+    var best = parseInt(load(key, '0'), 10) || 0;
+    if (s >= best) { save(key, String(Math.max(s, best))); return true; }
+    return false;
+  }
+  function timeLimit() { return ranked() ? ROUND_SECS : DIFFS[diff].secs; }
   function pickPracticeTarget() {
-    var stars = STAR_IDX.map(function (i) { return DATA[i]; });
-    var pool = stars.filter(function (p) { return recent.indexOf(p[0]) === -1; });
-    if (!pool.length) { recent = []; pool = stars; }
+    var all = DIFFS[diff].tous ? DATA : STAR_IDX.map(function (i) { return DATA[i]; });
+    var pool = all.filter(function (p) { return recent.indexOf(p[0]) === -1; });
+    if (!pool.length) { recent = []; pool = all; }
     var p = pool[Math.floor(Math.random() * pool.length)];
     recent.push(p[0]);
     if (recent.length > 40) recent = recent.slice(-40);
@@ -471,11 +501,20 @@
     el['start-hint'].style.display = isDone() ? 'none' : 'flex';
   }
   function renderHint() {
-    if (!isDone() && guesses().length >= 4 && !(MODE === 'duel' && !duel)) {
-      var initials = target()[0].split(' ').map(function (w) { return w.charAt(0) + '.'; }).join(' ');
-      el.hint.textContent = '🕵️ Indice : ses initiales sont « ' + initials + ' »';
-      el.hint.hidden = false;
-    } else el.hint.hidden = true;
+    var show = [];
+    if (!isDone() && !(MODE === 'duel' && !duel)) {
+      var t = target();
+      var n = guesses().length;
+      // Mystère hors stars (Difficile, Élite, duel expert) : le championnat est
+      // offert dès 2 essais — un joueur pointu doit rester trouvable par déduction.
+      if (t[8] !== 1 && n >= 2) show.push('🏟️ Coup de pouce : il joue en ' + t[2] + '.');
+      if (n >= 4) {
+        var initials = t[0].split(' ').map(function (w) { return w.charAt(0) + '.'; }).join(' ');
+        show.push('🕵️ Ses initiales : « ' + initials + ' »');
+      }
+    }
+    if (show.length) { el.hint.textContent = show.join('  ·  '); el.hint.hidden = false; }
+    else el.hint.hidden = true;
     renderNotes(); // l'enquête suit le même cycle de vie que l'indice
   }
   function renderStatsJour() {
@@ -485,17 +524,52 @@
     el['s-max'].textContent = statsJour.maxStreak;
   }
   function renderPodium() {
-    el['podium-list'].innerHTML = podium.slice(0, 5).map(function (r, i) {
+    var dk = diffKey(ranked());
+    el['podium-diff'].textContent = '(' + DIFFS[dk].label.toLowerCase() + ')';
+    var rows = podium.filter(function (r) { return (r.k || 'moyen') === dk; }).slice(0, 5);
+    el['podium-list'].innerHTML = rows.map(function (r, i) {
       var medal = ['🥇', '🥈', '🥉', '4.', '5.'][i];
       var date = new Date(r.d + 'T12:00:00').toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' });
       return '<li><span class="medal">' + medal + '</span><span class="score">' + r.s + ' joueur' + (r.s > 1 ? 's' : '') + '</span><span>' + date + '</span></li>';
     }).join('') || '<li><span>Aucune série terminée — lance-toi !</span></li>';
   }
-  function renderMarathonBar() {
-    el['mb-label'].textContent = ranked() ? '🏆 Marathon du jour (classé)' : '🎲 Entraînement libre';
-    el['mb-serie'].textContent = serieActuelle();
-    el['mb-best'].textContent = mBest;
+  function renderDiffPicker() {
+    var visible = MODE === 'marathon' && !ranked();
+    el['diff-picker'].hidden = !visible;
+    if (!visible) return;
+    Array.prototype.forEach.call(el['diff-picker'].querySelectorAll('.diff-chip'), function (b) {
+      b.setAttribute('aria-pressed', b.dataset.d === diff);
+    });
   }
+  function renderMarathonBar() {
+    el['mb-label'].textContent = ranked() ? '🏆 Marathon du jour (classé)' : '🎲 Libre · ' + DIFFS[diff].label;
+    el['mb-serie'].textContent = serieActuelle();
+    el['mb-best'].textContent = getBest();
+    renderDiffPicker();
+  }
+  // Changer de difficulté : la série d'entraînement en cours est enregistrée
+  // silencieusement (si > 0) puis une nouvelle run démarre dans le bon vivier.
+  function setDiff(k) {
+    if (!DIFFS[k] || k === diff || ranked()) return;
+    if (!marathonOver && run && run.serie > 0) recordSerie(run.serie, diff);
+    diff = k;
+    save('jm-diff', k);
+    marathonOver = false;
+    endedRun = null;
+    newPracticeRun();
+    armMarathonDeadline(true);
+    renderMarathonBar();
+    renderPodium();
+    hideEnd();
+    renderBoard();
+    renderStartHint();
+    renderHint();
+    el['guess-input'].focus();
+  }
+  el['diff-picker'].addEventListener('click', function (e) {
+    var b = e.target.closest('.diff-chip');
+    if (b) setDiff(b.dataset.d);
+  });
 
   // ── Fin de partie ──
   var countdownTimer = null;
@@ -538,7 +612,8 @@
       }
     } else {
       var st = marathonState();
-      if (marathonOver || !st || !st.deadline) { c.hidden = true; return; }
+      var lim = timeLimit();
+      if (marathonOver || !st || !lim || !st.deadline) { c.hidden = true; return; }
       var rem = (st.deadline - Date.now()) / 1000;
       if (rem <= 0) {
         if (el['round-banner'].hidden) { c.hidden = true; endMarathon(true); }
@@ -547,7 +622,7 @@
       c.hidden = false;
       c.textContent = '⏳ ' + fmtSecs(rem);
       c.classList.add('mara');
-      c.style.setProperty('--t', Math.min(1, rem / ROUND_SECS)); // le fond de la pastille = barre de temps
+      c.style.setProperty('--t', Math.min(1, rem / lim)); // le fond de la pastille = barre de temps
       c.classList.toggle('low', rem <= 15);
     }
   }
@@ -582,7 +657,7 @@
       var s = endedRun ? endedRun.serie : 0;
       el['end-verdict'].textContent = endedRun && endedRun.timeout ? '⏱ Temps écoulé — le dernier était :' : 'Série terminée — le dernier était :';
       el['end-streak'].textContent = (s > 0
-        ? '🏁 ' + s + ' joueur' + (s > 1 ? 's' : '') + ' d’affilée' + (s >= mBest && s > 0 ? ' — record perso !' : '')
+        ? '🏁 ' + s + ' joueur' + (s > 1 ? 's' : '') + ' d’affilée' + (endedRun && endedRun.best ? ' — record perso !' : '')
         : 'Zéro. Ça arrive aux meilleurs.') + (endedRun && endedRun.ranked && LB ? ' · score envoyé au classement du jour' : '');
       el['btn-again'].hidden = false;
       el['btn-again'].textContent = endedRun && endedRun.ranked ? 'ENTRAÎNEMENT LIBRE' : 'REJOUER';
@@ -653,12 +728,18 @@
   function armMarathonDeadline(force, graceMs) {
     var st = marathonState();
     if (!st) return;
+    var lim = timeLimit();
+    if (!lim) { // difficulté sans chrono : on purge toute deadline résiduelle
+      if (st.deadline) { delete st.deadline; saveMarathonState(); }
+      return;
+    }
     if (force || !st.deadline) {
-      st.deadline = Date.now() + ROUND_SECS * 1000 + (graceMs || 0);
+      st.deadline = Date.now() + lim * 1000 + (graceMs || 0);
       saveMarathonState();
     }
   }
   function marathonExpired() {
+    if (!timeLimit()) return false;
     var st = marathonState();
     return !!(st && st.deadline && Date.now() > st.deadline);
   }
@@ -668,13 +749,7 @@
     var s = wasRanked ? mday.serie : run.serie;
     var tName = wasRanked ? mdayTarget()[0] : run.target;
     endedRun = { serie: s, target: tName, ranked: wasRanked, timeout: !!timedOut };
-    if (s > 0) {
-      podium.push({ s: s, d: DAY });
-      podium.sort(function (a, b) { return b.s - a.s; });
-      podium = podium.slice(0, 5);
-      save('jm-podium', JSON.stringify(podium));
-    }
-    if (s > mBest) { mBest = s; save('jm-mbest', String(mBest)); }
+    endedRun.best = recordSerie(s, diffKey(wasRanked));
     if (wasRanked) {
       mday.done = true;
       save('jm-mday-' + DAY, JSON.stringify(mday));
@@ -692,7 +767,8 @@
     armMarathonDeadline(true, 1600); // nouveau joueur = nouveau compte à rebours (+ le temps de la bannière)
     confetti(26);
     var s = serieActuelle();
-    if (s > mBest) { mBest = s; save('jm-mbest', String(mBest)); }
+    var bk = 'jm-mbest-' + diffKey(ranked());
+    if (s > (parseInt(load(bk, '0'), 10) || 0)) save(bk, String(s));
     renderMarathonBar();
     el['round-banner'].textContent = '✅ C’était bien ' + t[0] + ' ! Série : ' + s + ' — joueur suivant…';
     el['round-banner'].hidden = false;
@@ -742,12 +818,16 @@
       (duel.won ? 'Je l’ai trouvé en ' + duel.g.length + '/6' + (duel.secs != null ? ' (⏱ ' + fmtSecs(duel.secs) + ')' : '') + '.' : 'Moi je ne l’ai pas eu…') +
       ' À toi : ' + duelLink();
   }
-  el['btn-duel-new'].addEventListener('click', function () {
-    startDuel(randomStar(), null, true);
+  var lastDuelExpert = false; // pour que « NOUVEAU DUEL » relance le même type
+  function launchDuel(expert) {
+    lastDuelExpert = !!expert;
+    startDuel(expert ? randomAny() : randomStar(), null, true);
     hideEnd();
     renderBoard(); renderStartHint(); renderHint();
     el['guess-input'].focus();
-  });
+  }
+  el['btn-duel-new'].addEventListener('click', function () { launchDuel(false); });
+  el['btn-duel-expert'].addEventListener('click', function () { launchDuel(true); });
   el['duel-url'].addEventListener('focus', function () { this.select(); });
   el['btn-copy-duel'].addEventListener('click', function () {
     el['duel-url'].select();
@@ -891,6 +971,7 @@
       el['tab-' + x].setAttribute('aria-selected', x === m);
     });
     el['marathon-bar'].style.display = m === 'marathon' ? 'flex' : 'none';
+    if (m !== 'marathon') el['diff-picker'].hidden = true;
     el.stats.style.display = m === 'jour' ? 'flex' : 'none';
     el.podium.hidden = m !== 'marathon';
     el.classement.hidden = m !== 'marathon' || !LB;
@@ -930,9 +1011,7 @@
   // ── Boutons marathon ──
   el['btn-again'].addEventListener('click', function () {
     if (MODE === 'duel') {
-      startDuel(randomStar(), null, true);
-      hideEnd(); renderBoard(); renderStartHint(); renderHint();
-      el['guess-input'].focus();
+      launchDuel(lastDuelExpert);
       return;
     }
     marathonOver = false;
