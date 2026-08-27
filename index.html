@@ -308,6 +308,84 @@
   #podium li .score { font-weight: 700; color: var(--green-deep); }
   #podium[hidden] { display: none; }
 
+  /* Intro duel */
+  #duel-intro {
+    margin: 0 2px 14px; padding: 16px 14px;
+    background: rgba(200,52,44,.08); border: 1.5px dashed var(--red);
+    border-radius: 4px; text-align: center;
+    display: flex; flex-direction: column; gap: 12px; align-items: center;
+  }
+  #duel-intro[hidden] { display: none; }
+  #duel-intro p { font-size: 14px; line-height: 1.5; max-width: 40ch; }
+  #duel-intro button {
+    font-family: var(--font-display); font-size: 15px;
+    color: var(--sticker-border); background: linear-gradient(175deg, var(--red), var(--red-deep));
+    border: 2.5px solid var(--ink); border-radius: 4px;
+    padding: 11px 26px; cursor: pointer;
+    box-shadow: 2px 3px 0 rgba(34,37,31,.25);
+  }
+  #duel-intro button:active { transform: translate(1px,2px); box-shadow: none; }
+  #duel-intro button:focus-visible { outline: 3px solid var(--gold); }
+
+  #endcard .social { font-size: 13px; font-weight: 600; color: var(--green-deep); margin-bottom: 12px; min-height: 1em; }
+
+  /* Classement mondial */
+  #classement { margin: 16px 2px 0; }
+  #classement h2 {
+    font-family: var(--font-cond); font-weight: 700; font-size: 13px;
+    letter-spacing: .15em; text-transform: uppercase; text-align: center;
+    margin-bottom: 8px; opacity: .8;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  #classement h2 button {
+    font-size: 14px; background: none; border: 1.5px solid var(--ink); border-radius: 4px;
+    cursor: pointer; padding: 1px 7px; color: var(--ink);
+  }
+  #classement ol { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  #classement li {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--sticker-border); border: 2px solid var(--ink); border-radius: 4px;
+    padding: 6px 12px; font-family: var(--font-cond); font-weight: 600; font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+  #classement li .medal { width: 26px; flex-shrink: 0; }
+  #classement li span:nth-child(2) { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #classement li .score { font-weight: 700; color: var(--green-deep); }
+  #classement li.me { border-color: var(--gold-deep); background: linear-gradient(170deg, #fdf6e0, #f3e6c2); }
+  #classement-note { text-align: center; font-size: 11px; opacity: .6; margin-top: 6px; }
+  #classement[hidden] { display: none; }
+
+  /* Dialogue pseudo (DOM, jamais de prompt() natif) */
+  #pseudo-dialog {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(34,37,31,.55);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  #pseudo-dialog[hidden] { display: none; }
+  .pseudo-card {
+    background: var(--page); border: 4px solid var(--sticker-border);
+    outline: 1px solid rgba(34,37,31,.3);
+    box-shadow: 4px 6px 0 rgba(34,37,31,.35);
+    border-radius: 6px; padding: 20px 18px;
+    display: flex; flex-direction: column; gap: 12px; align-items: center;
+    width: min(340px, 90vw);
+  }
+  .pseudo-card h3 { font-family: var(--font-cond); font-weight: 700; font-size: 16px; letter-spacing: .04em; }
+  .pseudo-card input {
+    width: 100%; font-family: var(--font-cond); font-size: 18px; font-weight: 600;
+    padding: 10px 12px; border: 2.5px solid var(--ink); border-radius: 4px;
+    background: var(--sticker-border);
+  }
+  .pseudo-card input:focus { outline: 3px solid var(--gold); }
+  .pseudo-card button {
+    font-family: var(--font-display); font-size: 14px;
+    color: var(--sticker-border); background: linear-gradient(175deg, var(--green), var(--green-deep));
+    border: 2.5px solid var(--ink); border-radius: 4px;
+    padding: 10px 24px; cursor: pointer;
+    box-shadow: 2px 3px 0 rgba(34,37,31,.25);
+  }
+  .pseudo-card button:active { transform: translate(1px,2px); box-shadow: none; }
+
   footer { margin-top: 26px; text-align: center; font-size: 11px; opacity: .6; line-height: 1.7; }
   footer a { color: inherit; }
   #storage-warn { margin: 10px 2px; font-size: 12px; color: var(--red-deep); font-weight: 600; }
@@ -323,25 +401,34 @@
 
   <div id="modes" role="tablist" aria-label="Mode de jeu">
     <button class="mode-tab" id="tab-jour" role="tab" aria-selected="true">☀️ Le jour</button>
-    <button class="mode-tab" id="tab-marathon" role="tab" aria-selected="false">🔁 Marathon</button>
+    <button class="mode-tab" id="tab-marathon" role="tab" aria-selected="false">🏆 Marathon</button>
+    <button class="mode-tab" id="tab-duel" role="tab" aria-selected="false">⚔️ Duel</button>
   </div>
 
   <details class="rules">
     <summary>Comment jouer ?</summary>
-    <p>Devine le footballeur en <strong>6 essais</strong>. Son <strong>poste</strong> t'est donné dès le départ.
+    <p>Devine le footballeur en <strong>6 essais</strong>. Sa <strong>ligne</strong> (gardien, défenseur, milieu, attaquant) t'est donnée dès le départ.
     Chaque essai compare <strong>nation, championnat, club, poste et âge</strong> avec le joueur mystère :
-    <span class="lg g"></span> exact · <span class="lg y"></span> proche (même confédération, même championnat, ou âge à 2 ans près) ·
-    <span class="lg n"></span> non. La flèche indique si le mystère est plus vieux ↑ ou plus jeune ↓.</p>
+    <span class="lg g"></span> exact · <span class="lg y"></span> proche (même confédération, même championnat, même ligne de jeu, ou âge à 2 ans près) ·
+    <span class="lg n"></span> non. La flèche indique si le mystère est plus vieux ↑ ou plus jeune ↓.
+    Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
     <p><strong>☀️ Le jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit.
-    <strong>🔁 Marathon</strong> : des mystères en boucle — ta série grimpe tant que tu trouves, un raté et elle retombe.</p>
+    <strong>🏆 Marathon</strong> : la même séquence de mystères pour tout le monde, une tentative classée par jour — ta série grimpe jusqu'au premier raté, puis entraînement libre à volonté.
+    <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur, envoie-le à un pote, comparez vos scores.</p>
   </details>
 
   <p id="storage-warn" hidden>⚠ Sauvegarde indisponible : parties et records ne seront pas conservés si tu fermes la page.</p>
 
   <div id="marathon-bar">
-    <span>Série en cours : <span class="serie" id="mb-serie">0</span></span>
-    <span>Record : <span id="mb-best">0</span></span>
+    <span id="mb-label">🏆 Marathon du jour</span>
+    <span>Série : <span class="serie" id="mb-serie">0</span> · Record : <span id="mb-best">0</span></span>
     <button id="btn-abandon">Abandonner</button>
+  </div>
+
+  <div id="duel-intro" hidden>
+    <p>⚔️ <strong>Le duel</strong> : tu joues un mystère tiré au sort, puis tu envoies le lien-défi à un pote.
+    Il affronte <em>le même joueur</em> — et le verdict tombe.</p>
+    <button id="btn-duel-new">LANCER UN DUEL</button>
   </div>
 
   <div id="start-hint"></div>
@@ -369,9 +456,11 @@
     <div class="player" id="end-player"></div>
     <div class="desc" id="end-desc"></div>
     <div class="streak" id="end-streak"></div>
+    <div class="social" id="end-social"></div>
     <div class="btns">
       <button id="btn-again" class="green" hidden>REJOUER</button>
       <button id="btn-share">PARTAGER</button>
+      <button id="btn-duel-link" hidden>⚔️ LIEN DE DÉFI</button>
     </div>
     <div id="copy-feedback"></div>
     <div id="countdown"></div>
@@ -384,9 +473,23 @@
     <div><div class="v" id="s-max">0</div><div class="k">Record</div></div>
   </div>
 
+  <div id="classement" hidden>
+    <h2>🌍 Classement du jour <button id="btn-refresh-classement" title="Actualiser">↻</button></h2>
+    <ol id="classement-list"></ol>
+    <p id="classement-note"></p>
+  </div>
+
   <div id="podium" hidden>
-    <h2>🏆 Tes meilleures séries marathon</h2>
+    <h2>🏅 Tes meilleures séries</h2>
     <ol id="podium-list"></ol>
+  </div>
+
+  <div id="pseudo-dialog" hidden>
+    <div class="pseudo-card">
+      <h3>Ton pseudo pour le classement</h3>
+      <input id="pseudo-input" type="text" maxlength="20" autocomplete="off" placeholder="Ex. : Ilias1993">
+      <button id="btn-pseudo-ok">C'EST MOI</button>
+    </div>
   </div>
 
   <footer>
@@ -396,6 +499,7 @@
 </div>
 
 <script src="data.js"></script>
+<script src="config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

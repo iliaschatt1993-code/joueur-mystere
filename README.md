@@ -6,11 +6,14 @@
 
 ## Fonctionnalités
 
-- 🟩 🟨 ⬜ Indices croisés façon Wordle (🟨 = même confédération, même championnat, ou âge à 2 ans près)
+- 🟩 🟨 ⬜ Indices croisés façon Wordle (🟨 = même confédération, même championnat, même ligne de jeu, ou âge à 2 ans près)
+- ⚽ **Postes fins** : gardien, défenseur central, latéraux, milieu défensif/central/offensif, ailiers, avant-centre
 - ☀️ **Le jour** : un mystère quotidien, identique pour tous, avec statistiques et série de victoires
-- 🔁 **Marathon** : enchaîne les mystères, ta série grimpe jusqu'au premier raté — podium local des meilleures séries
-- 🧭 Le poste du joueur est donné dès le départ, ses initiales après 4 essais manqués
-- 📲 Installable (PWA), jouable hors ligne, aucune donnée collectée — tout reste dans ton navigateur
+- 🏆 **Marathon du jour** : la même séquence de mystères pour tout le monde, une tentative classée par jour — puis entraînement libre à volonté
+- ⚔️ **Duel** : un lien-défi à envoyer à un pote, même joueur pour les deux, verdict comparé
+- 🌍 **Classement mondial du jour** et % de réussite (optionnels — s'activent quand un backend Supabase est configuré dans `config.js`)
+- 🧭 La ligne du joueur est donnée dès le départ, ses initiales après 4 essais manqués
+- 📲 Installable (PWA), jouable hors ligne — sans backend configuré, rien ne quitte ton navigateur
 - 📤 Partage du résultat en grille d'emojis, sans spoiler
 
 ## Données
