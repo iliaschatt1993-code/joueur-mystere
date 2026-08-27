@@ -69,3 +69,50 @@ $$;
 
 grant execute on function get_daily_stats(date)  to anon;
 grant execute on function get_marathon_top(date) to anon;
+
+-- ══════════════════════════════════════════════════════════════
+-- Ajout du 27/08/2026 — mesure d'audience (lancement public)
+-- À coller tel quel dans : SQL Editor → New query → Run
+-- ══════════════════════════════════════════════════════════════
+
+-- Visites : 1 ligne par navigateur et par jour, envoyée par l'app.
+-- Pas de cookie, pas d'IP, pas de donnée personnelle — juste le jour,
+-- la source (`?src=tiktok` d'un lien de bio, ou domaine référent) et mobile/desktop.
+create table if not exists visites (
+  id bigint generated always as identity primary key,
+  day date not null,
+  source text check (source is null or char_length(source) <= 60),
+  mobile boolean,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_visites_day on visites (day);
+
+alter table visites enable row level security;
+drop policy if exists insert_visites on visites;
+create policy insert_visites on visites
+  for insert to anon
+  with check (day between current_date - 1 and current_date + 1);
+
+-- Tableau de bord : agrégats des 14 derniers jours (visites, parties, sources).
+-- Lecture publique mais agrégée — aucune ligne brute ne sort.
+create or replace function get_tableau_de_bord()
+returns json
+language sql security definer set search_path = public
+as $$
+  select json_build_object(
+    'visites', (select coalesce(json_agg(t), '[]'::json) from (
+      select day, count(*) as n, count(*) filter (where mobile) as mobiles
+      from visites where day >= current_date - 13
+      group by day order by day) t),
+    'parties', (select coalesce(json_agg(t), '[]'::json) from (
+      select day, count(*) as n, count(*) filter (where guesses > 0) as gagnees
+      from daily_results where day >= current_date - 13
+      group by day order by day) t),
+    'sources', (select coalesce(json_agg(t), '[]'::json) from (
+      select coalesce(source, 'direct') as source, count(*) as n
+      from visites where day >= current_date - 13
+      group by 1 order by count(*) desc limit 12) t)
+  );
+$$;
+
+grant execute on function get_tableau_de_bord() to anon;

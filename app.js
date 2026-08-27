@@ -344,6 +344,25 @@
     }
   } : null;
 
+  // ── Visite du jour (mesure d'audience : 1 ping par navigateur et par jour,
+  // sans cookie ni donnée personnelle ; un lien `?src=tiktok` en bio attribue
+  // la source, sinon on retient le domaine référent) ──
+  (function pingVisite() {
+    if (!LB || load('jm-visite-' + DAY, null)) return;
+    var src = '';
+    try { src = new URLSearchParams(location.search).get('src') || ''; } catch (e) {}
+    if (!src) {
+      try { if (document.referrer) src = new URL(document.referrer).hostname; } catch (e) {}
+      if (src === location.hostname) src = '';
+    }
+    save('jm-visite-' + DAY, '1');
+    LB.post('/rest/v1/visites', {
+      day: DAY,
+      source: src ? src.slice(0, 60) : null,
+      mobile: !!(window.matchMedia && matchMedia('(pointer: coarse)').matches)
+    }).catch(function () {});
+  })();
+
   function submitDailyResult() {
     if (!LB || load('jm-sub-' + DAY, null)) return;
     save('jm-sub-' + DAY, '1');
