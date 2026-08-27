@@ -208,10 +208,11 @@
    'end-social', 'btn-again', 'btn-share', 'duel-share', 'duel-url', 'btn-copy-duel', 'btn-send-duel', 'wa-duel', 'copy-feedback', 'countdown',
    'stats', 's-played', 's-rate', 's-streak', 's-max', 'podium', 'podium-list',
    'classement', 'classement-list', 'classement-note', 'btn-refresh-classement',
-   'pseudo-dialog', 'pseudo-input', 'btn-pseudo-ok', 'storage-warn', 'data-count'].forEach(function (id) {
+   'pseudo-dialog', 'pseudo-input', 'btn-pseudo-ok', 'storage-warn', 'data-count',
+   'dp-note', 'intro-dialog', 'btn-intro-go', 'btn-intro-rules'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
-  el['data-count'].textContent = DATA.length.toLocaleString('fr-BE') + ' joueurs · mystères : ' + STAR_IDX.length + ' stars (jour, classé, facile/moyen) ou toute la base (difficile, élite, duel expert)';
+  el['data-count'].textContent = DATA.length.toLocaleString('fr-BE');
   el['puzzle-meta'].textContent =
     'N°' + PUZZLE_NUM + ' · ' + new Date(DAY + 'T12:00:00').toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -335,6 +336,19 @@
     if (pseudoCb) { var cb = pseudoCb; pseudoCb = null; cb(pseudo); }
   });
   el['pseudo-input'].addEventListener('keydown', function (e) { if (e.key === 'Enter') el['btn-pseudo-ok'].click(); });
+
+  // ── Intro des nouveaux joueurs (une fois, en DOM — jamais de modal natif) ──
+  (function introNouveau() {
+    if (load('jm-intro-vue', null) || statsJour.played > 0 || jour.done || jour.g.length) return;
+    el['intro-dialog'].hidden = false;
+    function fermer() { el['intro-dialog'].hidden = true; save('jm-intro-vue', '1'); }
+    el['btn-intro-go'].addEventListener('click', fermer);
+    el['btn-intro-rules'].addEventListener('click', function () {
+      fermer();
+      var r = document.querySelector('details.rules');
+      if (r) { r.open = true; r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  })();
 
   // ── Classement en ligne (Supabase, optionnel) ──
   var LB = CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY ? {
@@ -592,11 +606,17 @@
     }).join('') || '<li><span>Aucune série terminée — lance-toi !</span></li>';
   }
   function renderDiffPicker() {
-    var visible = MODE === 'marathon' && !ranked();
+    // Toujours visible en marathon : pendant la tentative classée, les 4 difficultés
+    // restent affichées mais verrouillées (sinon un nouveau joueur ignore qu'elles existent).
+    var visible = MODE === 'marathon';
     el['diff-picker'].hidden = !visible;
     if (!visible) return;
+    var locked = ranked();
+    el['diff-picker'].classList.toggle('locked', locked);
+    el['dp-note'].hidden = !locked;
     Array.prototype.forEach.call(el['diff-picker'].querySelectorAll('.diff-chip'), function (b) {
-      b.setAttribute('aria-pressed', b.dataset.d === diff);
+      b.disabled = locked;
+      b.setAttribute('aria-pressed', !locked && b.dataset.d === diff);
     });
   }
   function renderMarathonBar() {
