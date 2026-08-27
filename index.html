@@ -63,7 +63,18 @@
     padding: 14px 10px 12px;
     text-align: center;
     margin: 4px 2px 16px;
+    position: relative; overflow: hidden;
   }
+  header.sticker::after {
+    content: ''; position: absolute; top: -60%; left: -45%;
+    width: 38%; height: 220%;
+    background: linear-gradient(75deg, transparent, rgba(255,255,255,.16), transparent);
+    transform: rotate(8deg);
+    animation: sheen 7s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes sheen { 0%, 55% { left: -45%; } 100% { left: 135%; } }
+  @media (prefers-reduced-motion: reduce) { header.sticker::after { animation: none; } }
   header.sticker h1 {
     font-family: var(--font-display);
     font-weight: 400;
@@ -91,11 +102,18 @@
     cursor: pointer;
     box-shadow: 2px 3px 0 rgba(34,37,31,.2);
   }
+  .mode-tab { transition: background .18s, color .18s, transform .12s, box-shadow .12s; }
   .mode-tab[aria-selected="true"] {
     background: linear-gradient(175deg, var(--green), var(--green-deep));
     color: var(--sticker-border);
   }
   .mode-tab:active { transform: translate(1px,2px); box-shadow: none; }
+  @media (hover: hover) {
+    .mode-tab:hover:not([aria-selected="true"]) { transform: translateY(-1px); box-shadow: 2px 4px 0 rgba(34,37,31,.28); }
+    #btn-guess:hover, #endcard button:hover, #duel-intro button:hover,
+    #duel-share .ds-btns button:hover, #duel-share .ds-btns a:hover { filter: brightness(1.08); }
+    .try-dot { transition: transform .15s, background .15s; }
+  }
   .mode-tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
   details.rules {
@@ -164,20 +182,22 @@
   }
   #suggestions[hidden] { display: none; }
   .sug {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
-    padding: 9px 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 13px; cursor: pointer;
     font-family: var(--font-cond); font-size: 17px; font-weight: 600;
     border-bottom: 1px solid rgba(34,37,31,.12);
+    transition: background .12s;
   }
   .sug:last-child { border-bottom: none; }
   .sug:hover, .sug.active { background: rgba(201,162,39,.22); }
+  .sug .sug-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sug small { font-size: 13px; font-weight: 500; opacity: .65; white-space: nowrap; }
   #notice { font-size: 13px; margin: 6px 2px 0; color: var(--red-deep); font-weight: 500; min-height: 1.1em; }
 
   /* Compteur d'essais */
   #tries { display: flex; gap: 6px; justify-content: center; margin: 2px 0 12px; }
-  .try-dot { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--ink); background: transparent; }
-  .try-dot.used { background: var(--red); }
+  .try-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--ink); background: transparent; }
+  .try-dot.used { background: var(--red); transform: scale(1.12); }
 
   /* Grille des essais */
   #board { display: flex; flex-direction: column; gap: 8px; margin: 0 2px; }
@@ -386,6 +406,78 @@
   }
   .pseudo-card button:active { transform: translate(1px,2px); box-shadow: none; }
 
+  /* Chrono (pastille) */
+  #chrono {
+    margin: 0 auto 10px; width: fit-content;
+    font-family: var(--font-cond); font-weight: 700; font-size: 15px; letter-spacing: .06em;
+    background: var(--ink); color: var(--sticker-border);
+    border-radius: 999px; padding: 4px 16px;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 2px 2px 0 rgba(34,37,31,.2);
+  }
+  #chrono[hidden] { display: none; }
+  #chrono.low { background: var(--red-deep); animation: chrono-pulse 1s ease infinite; }
+  @keyframes chrono-pulse { 50% { transform: scale(1.08); } }
+  @media (prefers-reduced-motion: reduce) { #chrono.low { animation: none; } }
+
+  /* Drapeaux de secours (plateformes sans émojis drapeaux : Windows, Opera…) */
+  .flag-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 26px; padding: 1px 5px; border-radius: 3px;
+    background: var(--ink); color: var(--sticker-border);
+    font-family: var(--font-cond); font-weight: 700; font-size: 10px; letter-spacing: .06em;
+    vertical-align: middle;
+  }
+
+  /* Badges de clubs (monogramme aux couleurs du maillot) */
+  .club-badge {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-cond); font-weight: 700; font-size: 9px;
+    border: 1.5px solid rgba(34,37,31,.55);
+    box-shadow: 1px 1px 0 rgba(34,37,31,.15);
+    flex-shrink: 0;
+  }
+  .cell.club-cell { gap: 2px; }
+  .cell.club-cell .club-badge { width: 24px; height: 24px; }
+
+  /* Indice de départ avec maillot mystère */
+  #start-hint { align-items: center; gap: 12px; justify-content: center; }
+  #start-hint .mini-jersey svg { width: 46px; height: auto; display: block; filter: drop-shadow(1.5px 2px 0 rgba(34,37,31,.2)); }
+
+  /* Maillot de la révélation */
+  #end-visual { display: flex; justify-content: center; margin: 10px 0 4px; }
+  #end-visual svg { width: 98px; height: auto; filter: drop-shadow(2px 3px 0 rgba(34,37,31,.22)); }
+  #end-visual:empty { display: none; }
+
+  /* Confettis de victoire */
+  .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+  .confetti i { position: absolute; top: -16px; width: 8px; height: 14px; border-radius: 2px; animation: confetti-fall linear both; }
+  @keyframes confetti-fall { to { transform: translateY(106vh) rotate(560deg); } }
+  @media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
+
+  /* Bloc lien de défi (duel) : le lien est AFFICHÉ, jamais seulement copié */
+  #duel-share { margin-top: 14px; padding-top: 12px; border-top: 1.5px dashed var(--gold-deep); display: flex; flex-direction: column; gap: 9px; }
+  #duel-share[hidden] { display: none; }
+  #duel-share .ds-title { font-family: var(--font-cond); font-weight: 700; font-size: 12px; letter-spacing: .13em; text-transform: uppercase; color: var(--gold-deep); }
+  #duel-url {
+    width: 100%; font-family: var(--font-body); font-size: 13px;
+    padding: 9px 10px; border: 2px solid var(--ink); border-radius: 4px;
+    background: var(--sticker-border); color: var(--ink);
+  }
+  #duel-url:focus { outline: 3px solid var(--gold); }
+  #duel-share .ds-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  #duel-share .ds-btns button, #duel-share .ds-btns a {
+    font-family: var(--font-display); font-size: 13px;
+    color: var(--sticker-border); background: linear-gradient(175deg, var(--green), var(--green-deep));
+    border: 2.5px solid var(--ink); border-radius: 4px;
+    padding: 9px 14px; cursor: pointer;
+    box-shadow: 2px 3px 0 rgba(34,37,31,.25);
+    text-decoration: none; display: inline-flex; align-items: center;
+  }
+  #duel-share .ds-btns button:active, #duel-share .ds-btns a:active { transform: translate(1px,2px); box-shadow: none; }
+  #duel-share .ds-btns [hidden] { display: none; }
+
   footer { margin-top: 26px; text-align: center; font-size: 11px; opacity: .6; line-height: 1.7; }
   footer a { color: inherit; }
   #storage-warn { margin: 10px 2px; font-size: 12px; color: var(--red-deep); font-weight: 600; }
@@ -412,9 +504,10 @@
     <span class="lg g"></span> exact · <span class="lg y"></span> proche (même confédération, même championnat, même ligne de jeu, ou âge à 2 ans près) ·
     <span class="lg n"></span> non. La flèche indique si le mystère est plus vieux ↑ ou plus jeune ↓.
     Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
-    <p><strong>☀️ Le jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit.
-    <strong>🏆 Marathon</strong> : la même séquence de mystères pour tout le monde, une tentative classée par jour — ta série grimpe jusqu'au premier raté, puis entraînement libre à volonté.
-    <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur, envoie-le à un pote, comparez vos scores.</p>
+    <p><strong>☀️ Le jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
+    <strong>🏆 Marathon</strong> : la même séquence de mystères pour tout le monde, une tentative classée par jour — <strong>⏳ 90 secondes par joueur</strong>, la série grimpe jusqu'au premier raté (ou au temps écoulé), puis entraînement libre à volonté.
+    <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur, envoie-le à un pote — à égalité d'essais, le plus rapide gagne.</p>
+    <p>🔎 La recherche ne répond qu'aux <strong>noms de joueurs</strong> : inutile de taper un club ou un pays pour lister des candidats.</p>
   </details>
 
   <p id="storage-warn" hidden>⚠ Sauvegarde indisponible : parties et records ne seront pas conservés si tu fermes la page.</p>
@@ -436,13 +529,14 @@
   <div id="guess-zone">
     <div id="guess-row">
       <input id="guess-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
-             placeholder="Tape un joueur, un club ou un pays…" aria-label="Nom du joueur">
+             placeholder="Tape le nom d'un joueur…" aria-label="Nom du joueur">
       <button id="btn-guess">ESSAYER</button>
     </div>
     <div id="suggestions" hidden></div>
     <div id="notice"></div>
   </div>
 
+  <div id="chrono" hidden></div>
   <div id="tries"></div>
   <div id="board">
     <div class="head-row"><span>Joueur</span><span>Nation</span><span>Championnat</span><span>Club</span><span>Poste · Âge</span></div>
@@ -453,6 +547,7 @@
 
   <div id="endcard" hidden>
     <div class="verdict" id="end-verdict"></div>
+    <div id="end-visual"></div>
     <div class="player" id="end-player"></div>
     <div class="desc" id="end-desc"></div>
     <div class="streak" id="end-streak"></div>
@@ -460,7 +555,15 @@
     <div class="btns">
       <button id="btn-again" class="green" hidden>REJOUER</button>
       <button id="btn-share">PARTAGER</button>
-      <button id="btn-duel-link" hidden>⚔️ LIEN DE DÉFI</button>
+    </div>
+    <div id="duel-share" hidden>
+      <div class="ds-title">⚔️ Ton lien de défi — envoie-le à ta victime</div>
+      <input id="duel-url" type="text" readonly spellcheck="false" aria-label="Lien de défi à envoyer">
+      <div class="ds-btns">
+        <button id="btn-copy-duel">📋 COPIER</button>
+        <a id="wa-duel" target="_blank" rel="noopener">💬 WHATSAPP</a>
+        <button id="btn-send-duel">📤 ENVOYER…</button>
+      </div>
     </div>
     <div id="copy-feedback"></div>
     <div id="countdown"></div>
@@ -493,13 +596,13 @@
   </div>
 
   <footer>
-    Effectifs : saison 2026-27 · <span id="data-count"></span> joueurs référencés<br>
+    Effectifs : saison 2026-27 · <span id="data-count"></span><br>
     <a href="https://github.com/iliaschatt1993-code/joueur-mystere" rel="noopener">Code source</a> · Installe l'app depuis le menu de ton navigateur 📲
   </footer>
 </div>
 
-<script src="data.js"></script>
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=4"></script>
+<script src="config.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

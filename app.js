@@ -21,6 +21,114 @@
   var LINE_PHRASE = { G: 'un gardien', D: 'un défenseur', M: 'un milieu', A: 'un attaquant' };
   var ALIASES = { 'cristiano ronaldo': 'cr7', 'kevin de bruyne': 'kdb' };
 
+  // Couleurs de maillot par club [fond, second, texte] — repli : teinte dérivée du nom
+  var CLUB_COLORS = {
+    'AC Milan': ['#d50032', '#1a1a1a', '#fff'], 'AS Roma': ['#8e1f2f', '#f0bc42', '#fff'],
+    'Ajax': ['#fff', '#d2122e', '#d2122e'], 'Al-Ahli': ['#00693e', '#fff', '#fff'],
+    'Al-Hilal': ['#1451a1', '#fff', '#fff'], 'Al-Ittihad': ['#ffd500', '#1a1a1a', '#1a1a1a'],
+    'Al-Nassr': ['#ffd200', '#1c3d6d', '#1c3d6d'], 'Al-Qadsiah': ['#ffc20e', '#005baa', '#005baa'],
+    'Arsenal': ['#ef0107', '#fff', '#fff'], 'Aston Villa': ['#67002f', '#95bfe5', '#95bfe5'],
+    'Atalanta': ['#1c62b7', '#1a1a1a', '#fff'], 'Athletic Bilbao': ['#ee2523', '#fff', '#fff'],
+    'Atlético Madrid': ['#cb3524', '#fff', '#fff'], 'Bayern Munich': ['#dc052d', '#fff', '#fff'],
+    'Benfica': ['#e83030', '#fff', '#fff'], 'Brighton': ['#0057b8', '#fff', '#fff'],
+    'Chelsea': ['#034694', '#fff', '#fff'], 'Chicago Fire': ['#c8102e', '#141946', '#fff'],
+    'Club Bruges': ['#0d5eaf', '#1a1a1a', '#fff'], 'Crystal Palace': ['#1b458f', '#c4122e', '#fff'],
+    'Côme': ['#041c2c', '#fff', '#fff'], 'Dortmund': ['#fde100', '#1a1a1a', '#1a1a1a'],
+    'Everton': ['#003399', '#fff', '#fff'], 'FC Barcelone': ['#a50044', '#004d98', '#fff'],
+    'FC Porto': ['#00428c', '#fff', '#fff'], 'Fenerbahçe': ['#163e90', '#ffed00', '#ffed00'],
+    'Fiorentina': ['#582c83', '#fff', '#fff'], 'Francfort': ['#e1000f', '#1a1a1a', '#fff'],
+    'Fulham': ['#fff', '#1a1a1a', '#1a1a1a'], 'Galatasaray': ['#a90432', '#fdb912', '#fdb912'],
+    'Inter Miami': ['#f7b5cd', '#231f20', '#231f20'], 'Inter Milan': ['#0068a8', '#1a1a1a', '#fff'],
+    'Juventus': ['#1a1a1a', '#fff', '#fff'], 'Lazio': ['#87d8f7', '#fff', '#1a3c5e'],
+    'Leeds': ['#fff', '#1d428a', '#1d428a'], 'Leverkusen': ['#e32219', '#1a1a1a', '#fff'],
+    'Lille': ['#e01e13', '#12284b', '#fff'], 'Liverpool': ['#c8102e', '#fff', '#fff'],
+    'Los Angeles FC': ['#1a1a1a', '#c39e6d', '#c39e6d'], 'Lyon': ['#fff', '#da291c', '#14387f'],
+    'Man City': ['#6cabdd', '#fff', '#fff'], 'Man United': ['#da291c', '#fbe122', '#fff'],
+    'Marseille': ['#fff', '#2faee0', '#2faee0'], 'Monaco': ['#e63312', '#fff', '#fff'],
+    'NEOM SC': ['#00b2a9', '#1a1a1a', '#fff'], 'Naples': ['#12a0d7', '#fff', '#fff'],
+    'Newcastle': ['#241f20', '#fff', '#fff'], 'Nottingham Forest': ['#dd0000', '#fff', '#fff'],
+    'PSG': ['#004170', '#da291c', '#fff'], 'PSV': ['#ed1c24', '#fff', '#fff'],
+    'RB Leipzig': ['#dd013f', '#fff', '#fff'], 'Real Betis': ['#00954c', '#fff', '#fff'],
+    'Real Madrid': ['#fff', '#febe10', '#1a1a1a'], 'Real Sociedad': ['#0067b1', '#fff', '#fff'],
+    'Rosario Central': ['#002d72', '#ffd100', '#ffd100'], 'Santos': ['#fff', '#1a1a1a', '#1a1a1a'],
+    'Sassuolo': ['#00a752', '#1a1a1a', '#fff'], 'Sporting CP': ['#008557', '#fff', '#fff'],
+    'Stuttgart': ['#fff', '#e32219', '#e32219'], 'Sunderland': ['#eb172b', '#fff', '#fff'],
+    'Tottenham': ['#fff', '#132257', '#132257'], 'Trabzonspor': ['#841e35', '#5ec2e0', '#fff'],
+    'Vancouver': ['#04265c', '#94c2e4', '#fff'], 'West Ham': ['#7a263a', '#1bb1e7', '#fff']
+  };
+  function clubColors(club) {
+    if (CLUB_COLORS[club]) return CLUB_COLORS[club];
+    if (window.JM_CLUBS && window.JM_CLUBS[club]) return window.JM_CLUBS[club];
+    var h = fnv('club:' + club) % 360;
+    return ['hsl(' + h + ',55%,38%)', 'hsl(' + ((h + 40) % 360) + ',55%,26%)', '#fff'];
+  }
+  // ── Drapeaux : émojis si la plateforme les rend (pas Windows/Opera), sinon écusson texte ──
+  var FLAG_OK = (function () {
+    try {
+      var cv = document.createElement('canvas'); cv.width = cv.height = 20;
+      var cx = cv.getContext('2d');
+      cx.textBaseline = 'top'; cx.font = '16px sans-serif';
+      cx.fillText('🇧🇪', 0, 0);
+      var d = cx.getImageData(0, 0, 20, 20).data;
+      for (var i = 0; i < d.length; i += 4) {
+        if (d[i + 3] > 16 && (Math.abs(d[i] - d[i + 1]) > 24 || Math.abs(d[i + 1] - d[i + 2]) > 24)) return true;
+      }
+      return false;
+    } catch (e) { return true; }
+  })();
+  function flagCode(emoji) {
+    var out = '';
+    for (var i = 0; i < emoji.length;) {
+      var c = emoji.codePointAt(i);
+      if (c >= 0x1F1E6 && c <= 0x1F1FF) out += String.fromCharCode(65 + c - 0x1F1E6);
+      else if (c >= 0xE0061 && c <= 0xE007A) out += String.fromCharCode(97 + c - 0xE0061);
+      i += c > 0xFFFF ? 2 : 1;
+    }
+    var TAG = { gbeng: 'ANG', gbsct: 'ÉCO', gbwls: 'GAL' };
+    return TAG[out] || out.toUpperCase() || '·';
+  }
+  function flagHTML(emoji) {
+    return FLAG_OK ? emoji : '<span class="flag-chip">' + flagCode(emoji) + '</span>';
+  }
+  function clubInitials(club) {
+    var words = club.replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+    if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+    return words.map(function (w) { return w.charAt(0); }).join('').slice(0, 3).toUpperCase();
+  }
+  function clubBadge(club) {
+    var c = clubColors(club);
+    return '<span class="club-badge" style="background:linear-gradient(135deg,' + c[0] + ' 55%,' + c[1] + ' 55%);color:' + c[2] + '">' + clubInitials(club) + '</span>';
+  }
+  // Maillot SVG — couleurs du club, l'âge en numéro ; mystère = gris avec « ? »
+  function jerseySVG(p, mystery) {
+    var c = mystery ? ['#c9bc9e', '#b0a184', '#f3ead8'] : clubColors(p[1]);
+    var label = mystery ? '?' : String(ageOf(p));
+    return '<svg viewBox="0 0 140 122" aria-hidden="true">' +
+      '<path d="M38 16 L8 36 L22 58 L36 48 Z" fill="' + c[1] + '" stroke="#22251f" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M102 16 L132 36 L118 58 L104 48 Z" fill="' + c[1] + '" stroke="#22251f" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M38 16 L54 12 Q70 30 86 12 L102 16 L104 48 L102 116 L38 116 L36 48 Z" fill="' + c[0] + '" stroke="#22251f" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M54 12 Q70 30 86 12" fill="none" stroke="' + c[1] + '" stroke-width="5"/>' +
+      '<text x="70" y="86" text-anchor="middle" font-family="Alfa Slab One, Rockwell, serif" font-size="38" fill="' + c[2] + '" stroke="#22251f" stroke-width="1.2" paint-order="stroke">' + label + '</text>' +
+      '</svg>';
+  }
+  // Confettis de victoire (aucune dépendance, retirés tout seuls)
+  function confetti(n) {
+    var wrap = document.createElement('div');
+    wrap.className = 'confetti';
+    var colors = ['#c8342c', '#2e7d46', '#c9a227', '#f5d9a8', '#22251f'];
+    for (var i = 0; i < (n || 70); i++) {
+      var s = document.createElement('i');
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.background = colors[i % colors.length];
+      s.style.animationDelay = (Math.random() * 0.6) + 's';
+      s.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+      s.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
+      wrap.appendChild(s);
+    }
+    document.body.appendChild(wrap);
+    setTimeout(function () { wrap.remove(); }, 3400);
+  }
+
   // ── Stockage : refus jamais silencieux ──
   var storageOK = true;
   function load(k, fb) { try { var v = localStorage.getItem(k); return v === null ? fb : v; } catch (e) { storageOK = false; return fb; } }
@@ -51,42 +159,52 @@
   var PUZZLE_NUM = daysBetween(EPOCH, DAY) + 1;
   var AGE_YEAR = new Date().getFullYear();
   function ageOf(p) { return AGE_YEAR - p[7]; }
+  var ROUND_SECS = 90; // marathon : temps par joueur (anti-triche : pas de réflexion infinie)
+  function fmtSecs(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
   function norm(s) {
     return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
   }
+  // Noms normalis\u00e9s pr\u00e9calcul\u00e9s (4 000+ joueurs : indispensable pour une saisie fluide)
+  var NORMS = DATA.map(function (p) { return norm(p[0]); });
+  // Vivier des myst\u00e8res : les stars (tier 1). Le reste n'est que devinable.
+  var STAR_IDX = [];
+  for (var _i = 0; _i < DATA.length; _i++) if (DATA[_i][8] === 1) STAR_IDX.push(_i);
+  function randomStar() { return STAR_IDX[Math.floor(Math.random() * STAR_IDX.length)]; }
   function findPlayer(name) {
     var n = norm(name);
-    for (var i = 0; i < DATA.length; i++) if (norm(DATA[i][0]) === n) return DATA[i];
-    return null;
+    var i = NORMS.indexOf(n);
+    return i === -1 ? null : DATA[i];
   }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
 
   // ── Éléments ──
   var el = {};
   ['puzzle-meta', 'tab-jour', 'tab-marathon', 'tab-duel', 'marathon-bar', 'mb-label', 'mb-serie', 'mb-best', 'btn-abandon',
-   'start-hint', 'guess-zone', 'guess-input', 'btn-guess', 'suggestions', 'notice', 'tries', 'board',
-   'round-banner', 'hint', 'duel-intro', 'btn-duel-new', 'endcard', 'end-verdict', 'end-player', 'end-desc', 'end-streak',
-   'end-social', 'btn-again', 'btn-share', 'btn-duel-link', 'copy-feedback', 'countdown',
+   'start-hint', 'guess-zone', 'guess-input', 'btn-guess', 'suggestions', 'notice', 'chrono', 'tries', 'board',
+   'round-banner', 'hint', 'duel-intro', 'btn-duel-new', 'endcard', 'end-visual', 'end-verdict', 'end-player', 'end-desc', 'end-streak',
+   'end-social', 'btn-again', 'btn-share', 'duel-share', 'duel-url', 'btn-copy-duel', 'btn-send-duel', 'wa-duel', 'copy-feedback', 'countdown',
    'stats', 's-played', 's-rate', 's-streak', 's-max', 'podium', 'podium-list',
    'classement', 'classement-list', 'classement-note', 'btn-refresh-classement',
    'pseudo-dialog', 'pseudo-input', 'btn-pseudo-ok', 'storage-warn', 'data-count'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
-  el['data-count'].textContent = DATA.length;
+  el['data-count'].textContent = DATA.length.toLocaleString('fr-BE') + ' joueurs devinables · ' + STAR_IDX.length + ' mystères possibles';
   el['puzzle-meta'].textContent =
     'N°' + PUZZLE_NUM + ' · ' + new Date(DAY + 'T12:00:00').toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' });
 
   // ── État JOUR ──
-  var TARGET_JOUR = DATA[fnv('joueur-mystere:' + DAY) % DATA.length];
+  var TARGET_JOUR = DATA[STAR_IDX[fnv('joueur-mystere:' + DAY) % STAR_IDX.length]];
   var jour = loadJSON('jm-' + DAY, { g: [], done: false, won: false });
+  // Le chrono du jour démarre à la première ouverture du mystère (persisté : recharger ne le remet pas à zéro)
+  if (!jour.done && !jour.t0) { jour.t0 = Date.now(); save('jm-' + DAY, JSON.stringify(jour)); }
   var statsJour = loadJSON('jm-stats', { played: 0, wins: 0, streak: 0, maxStreak: 0, lastWin: null });
 
   // ── État MARATHON ──
   // Marathon DU JOUR (classé) : même séquence pour tout le monde, une tentative par jour.
   var mdayOrder = (function () {
     var rng = mulberry32(fnv('marathon:' + DAY));
-    var idx = DATA.map(function (_, i) { return i; });
+    var idx = STAR_IDX.slice();
     for (var i = idx.length - 1; i > 0; i--) {
       var j = Math.floor(rng() * (i + 1));
       var tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
@@ -100,11 +218,12 @@
   var podium = loadJSON('jm-podium', []);
   var recent = loadJSON('jm-recent', []);
 
-  function mdayTarget() { return DATA[mdayOrder[mday.serie % DATA.length]]; }
+  function mdayTarget() { return DATA[mdayOrder[mday.serie % mdayOrder.length]]; }
   function ranked() { return !mday.done; } // le marathon est classé tant que la tentative du jour n'est pas finie
   function pickPracticeTarget() {
-    var pool = DATA.filter(function (p) { return recent.indexOf(p[0]) === -1; });
-    if (!pool.length) { recent = []; pool = DATA; }
+    var stars = STAR_IDX.map(function (i) { return DATA[i]; });
+    var pool = stars.filter(function (p) { return recent.indexOf(p[0]) === -1; });
+    if (!pool.length) { recent = []; pool = stars; }
     var p = pool[Math.floor(Math.random() * pool.length)];
     recent.push(p[0]);
     if (recent.length > 40) recent = recent.slice(-40);
@@ -119,11 +238,18 @@
   function duelDecode(code) { var i = (parseInt(code, 36) ^ DUEL_KEY) - 100; return (i >= 0 && i < DATA.length) ? i : -1; }
   var duel = null; // { code, target, g, done, won, challenger: {name, score} | null, mine: bool }
   function parseDuelHash() {
-    var m = location.hash.match(/^#d=([a-z0-9]+)(?:&s=(\d+))?(?:&n=([^&]*))?/);
+    var m = location.hash.match(/^#d=([a-z0-9]+)(.*)$/);
     if (!m) return null;
     var i = duelDecode(m[1]);
     if (i < 0) return null;
-    return { code: m[1], idx: i, challengerScore: m[2] ? parseInt(m[2], 10) : null, challengerName: m[3] ? decodeURIComponent(m[3]).slice(0, 20) : null };
+    var rest = m[2] || '';
+    var s = rest.match(/&s=(\d+)/), t = rest.match(/&t=(\d+)/), n = rest.match(/&n=([^&]*)/);
+    return {
+      code: m[1], idx: i,
+      challengerScore: s ? parseInt(s[1], 10) : null,
+      challengerSecs: t ? parseInt(t[1], 10) : null,
+      challengerName: n ? decodeURIComponent(n[1]).slice(0, 20) : null
+    };
   }
   var incomingDuel = parseDuelHash();
 
@@ -241,10 +367,10 @@
     var row = document.createElement('div');
     row.className = 'guess-line' + (animate ? ' reveal' : '');
     row.innerHTML =
-      cellHTML('name-cell' + (p[0] === t[0] ? ' ok' : ''), p[0].split(' ').slice(-1)[0], p[0].split(' ').slice(0, -1).join(' ')) +
-      cellHTML(m.nat, p[4], p[3]) +
-      cellHTML(m.lg, LEAGUE_FLAG[p[2]] || '⚽', p[2]) +
-      '<div class="cell ' + m.club + '"><span style="font-size:13px">' + p[1] + '</span></div>' +
+      cellHTML('name-cell' + (p[0] === t[0] ? ' ok' : ''), esc(p[0].split(' ').slice(-1)[0]), esc(p[0].split(' ').slice(0, -1).join(' '))) +
+      cellHTML(m.nat, flagHTML(p[4]), esc(p[3])) +
+      cellHTML(m.lg, flagHTML(LEAGUE_FLAG[p[2]] || '⚽'), esc(p[2])) +
+      '<div class="cell club-cell ' + m.club + '">' + clubBadge(p[1]) + '<span class="sub">' + p[1] + '</span></div>' +
       '<div class="cell duo">' +
         '<span class="tag ' + m.pos + '" title="' + POS_LABEL[p[6]] + '">' + p[6] + '</span>' +
         '<span class="tag ' + m.age + '">' + ageOf(p) + m.arrow + '</span>' +
@@ -280,8 +406,9 @@
   function renderStartHint() {
     if (MODE === 'duel' && !duel) { el['start-hint'].style.display = 'none'; return; }
     var t = target();
-    el['start-hint'].innerHTML = '🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.';
-    el['start-hint'].style.display = isDone() ? 'none' : 'block';
+    el['start-hint'].innerHTML = '<span class="mini-jersey">' + jerseySVG(t, true) + '</span>' +
+      '<span>🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.</span>';
+    el['start-hint'].style.display = isDone() ? 'none' : 'flex';
   }
   function renderHint() {
     if (!isDone() && guesses().length >= 4 && !(MODE === 'duel' && !duel)) {
@@ -326,6 +453,42 @@
     if (!countdownTimer) countdownTimer = setInterval(tickCountdown, 1000);
   }
 
+  // ── Chrono de jeu (jour/duel : chronomètre ; marathon : compte à rebours) ──
+  function tickAppChrono() {
+    var c = el.chrono;
+    if (MODE === 'jour') {
+      c.classList.remove('low');
+      if (jour.done) {
+        c.hidden = jour.secs == null;
+        if (jour.secs != null) c.textContent = '⏱ ' + fmtSecs(jour.secs);
+      } else if (jour.t0) {
+        c.hidden = false;
+        c.textContent = '⏱ ' + fmtSecs((Date.now() - jour.t0) / 1000);
+      } else c.hidden = true;
+    } else if (MODE === 'duel') {
+      c.classList.remove('low');
+      if (!duel) { c.hidden = true; return; }
+      if (duel.done) {
+        c.hidden = duel.secs == null;
+        if (duel.secs != null) c.textContent = '⏱ ' + fmtSecs(duel.secs);
+      } else {
+        c.hidden = false;
+        c.textContent = '⏱ ' + fmtSecs((Date.now() - (duel.t0 || Date.now())) / 1000);
+      }
+    } else {
+      var st = marathonState();
+      if (marathonOver || !st || !st.deadline) { c.hidden = true; return; }
+      var rem = (st.deadline - Date.now()) / 1000;
+      if (rem <= 0) {
+        if (el['round-banner'].hidden) { c.hidden = true; endMarathon(true); }
+        return;
+      }
+      c.hidden = false;
+      c.textContent = '⏳ ' + fmtSecs(rem);
+      c.classList.toggle('low', rem <= 15);
+    }
+  }
+
   function showEnd() {
     var t;
     if (MODE === 'marathon' && endedRun) t = findPlayer(endedRun.target);
@@ -335,21 +498,25 @@
     el.hint.hidden = true;
     el['copy-feedback'].textContent = '';
     el['end-social'].textContent = '';
-    el['btn-duel-link'].hidden = true;
-    el['end-player'].textContent = t[4] + ' ' + t[0];
+    el['duel-share'].hidden = true;
+    el['btn-share'].hidden = false;
+    el['end-visual'].innerHTML = jerseySVG(t);
+    el['end-player'].innerHTML = flagHTML(t[4]) + ' ' + esc(t[0]);
     el['end-desc'].textContent = POS_LABEL[t[6]] + ' · ' + t[1] + ' (' + t[2] + ') · ' + ageOf(t) + ' ans';
     el.countdown.style.display = 'none';
     el['btn-again'].hidden = true;
 
     if (MODE === 'jour') {
       el['end-verdict'].textContent = jour.won ? 'Trouvé en ' + jour.g.length + '/' + MAX_TRIES + ' !' : 'Raté… c’était :';
-      el['end-streak'].textContent = jour.won && statsJour.streak > 1 ? '🔥 Série de ' + statsJour.streak + ' jours'
-        : (jour.won ? '' : 'Reviens demain pour te rattraper !');
+      var chunks = [];
+      if (jour.won && statsJour.streak > 1) chunks.push('🔥 Série de ' + statsJour.streak + ' jours');
+      if (jour.won && jour.secs != null) chunks.push('⏱ ' + fmtSecs(jour.secs));
+      el['end-streak'].textContent = chunks.length ? chunks.join(' · ') : (jour.won ? '' : 'Reviens demain pour te rattraper !');
       startCountdown();
       fetchDailySocial();
     } else if (MODE === 'marathon') {
       var s = endedRun ? endedRun.serie : 0;
-      el['end-verdict'].textContent = 'Série terminée — le dernier était :';
+      el['end-verdict'].textContent = endedRun && endedRun.timeout ? '⏱ Temps écoulé — le dernier était :' : 'Série terminée — le dernier était :';
       el['end-streak'].textContent = (s > 0
         ? '🏁 ' + s + ' joueur' + (s > 1 ? 's' : '') + ' d’affilée' + (s >= mBest && s > 0 ? ' — record perso !' : '')
         : 'Zéro. Ça arrive aux meilleurs.') + (endedRun && endedRun.ranked && LB ? ' · score envoyé au classement du jour' : '');
@@ -359,20 +526,28 @@
     } else { // duel
       var mine = duel.won ? duel.g.length : 0;
       if (duel.challenger) {
+        var adv = duel.challenger.name || 'Ton adversaire';
         var theirs = duel.challenger.score;
+        var myT = duel.secs, thT = duel.challenger.secs;
         var verdict = !duel.won && !theirs ? 'Double zéro — personne ne le trouve !' :
-          !theirs ? 'Victoire ! ' + (duel.challenger.name || 'Ton adversaire') + ' ne l’avait pas trouvé.' :
-          !duel.won ? (duel.challenger.name || 'Ton adversaire') + ' gagne (' + theirs + '/6) — tu ne l’as pas trouvé.' :
+          !theirs ? 'Victoire ! ' + adv + ' ne l’avait pas trouvé.' :
+          !duel.won ? adv + ' gagne (' + theirs + '/6) — tu ne l’as pas trouvé.' :
           mine < theirs ? 'Victoire ' + mine + '/6 contre ' + theirs + '/6 !' :
-          mine > theirs ? (duel.challenger.name || 'Ton adversaire') + ' gagne : ' + theirs + '/6 contre ' + mine + '/6.' :
-          'Égalité parfaite : ' + mine + '/6 partout.';
+          mine > theirs ? adv + ' gagne : ' + theirs + '/6 contre ' + mine + '/6.' :
+          (myT != null && thT != null && myT !== thT
+            ? (myT < thT ? 'Victoire au chrono ! ' + mine + '/6 partout, mais ' + fmtSecs(myT) + ' contre ' + fmtSecs(thT) + '.'
+                         : adv + ' gagne au chrono : ' + fmtSecs(thT) + ' contre ' + fmtSecs(myT) + ' (' + mine + '/6 partout).')
+            : 'Égalité parfaite : ' + mine + '/6 partout.');
         el['end-verdict'].textContent = '⚔️ ' + verdict;
         el['end-streak'].textContent = '';
       } else {
         el['end-verdict'].textContent = duel.won ? 'Trouvé en ' + mine + '/' + MAX_TRIES + ' ! Maintenant, défie quelqu’un.' : 'Raté… mais tu peux quand même défier quelqu’un.';
         el['end-streak'].textContent = '';
       }
-      el['btn-duel-link'].hidden = false;
+      el['duel-url'].value = duelLink();
+      el['wa-duel'].href = 'https://wa.me/?text=' + encodeURIComponent(duelShareMsg());
+      el['duel-share'].hidden = false;
+      el['btn-share'].hidden = true;
       el['btn-again'].hidden = false;
       el['btn-again'].textContent = 'NOUVEAU DUEL';
     }
@@ -386,7 +561,9 @@
   // ── Logique JOUR ──
   function finishJour(won) {
     jour.done = true; jour.won = won;
+    if (jour.t0) jour.secs = Math.round((Date.now() - jour.t0) / 1000);
     save('jm-' + DAY, JSON.stringify(jour));
+    if (won) confetti(90);
     statsJour.played += 1;
     if (won) {
       var consecutive = statsJour.lastWin && daysBetween(statsJour.lastWin, DAY) === 1;
@@ -402,12 +579,31 @@
   }
 
   // ── Logique MARATHON ──
-  function endMarathon() {
+  // Compte à rebours par joueur : la deadline est ABSOLUE et persistée — fermer
+  // l'onglet ou recharger ne l'arrête pas (sinon le chrono ne servirait à rien).
+  function marathonState() { return ranked() ? mday : run; }
+  function saveMarathonState() {
+    if (ranked()) save('jm-mday-' + DAY, JSON.stringify(mday));
+    else if (run) save('jm-run', JSON.stringify(run));
+  }
+  function armMarathonDeadline(force, graceMs) {
+    var st = marathonState();
+    if (!st) return;
+    if (force || !st.deadline) {
+      st.deadline = Date.now() + ROUND_SECS * 1000 + (graceMs || 0);
+      saveMarathonState();
+    }
+  }
+  function marathonExpired() {
+    var st = marathonState();
+    return !!(st && st.deadline && Date.now() > st.deadline);
+  }
+  function endMarathon(timedOut) {
     marathonOver = true;
     var wasRanked = ranked();
     var s = wasRanked ? mday.serie : run.serie;
     var tName = wasRanked ? mdayTarget()[0] : run.target;
-    endedRun = { serie: s, target: tName, ranked: wasRanked };
+    endedRun = { serie: s, target: tName, ranked: wasRanked, timeout: !!timedOut };
     if (s > 0) {
       podium.push({ s: s, d: DAY });
       podium.sort(function (a, b) { return b.s - a.s; });
@@ -427,8 +623,10 @@
   }
   function marathonWin() {
     var t = target();
-    if (ranked()) { mday.serie += 1; mday.g = []; save('jm-mday-' + DAY, JSON.stringify(mday)); }
-    else { run.serie += 1; run.target = pickPracticeTarget()[0]; run.g = []; save('jm-run', JSON.stringify(run)); }
+    if (ranked()) { mday.serie += 1; mday.g = []; }
+    else { run.serie += 1; run.target = pickPracticeTarget()[0]; run.g = []; }
+    armMarathonDeadline(true, 1600); // nouveau joueur = nouveau compte à rebours (+ le temps de la bannière)
+    confetti(26);
     var s = serieActuelle();
     if (s > mBest) { mBest = s; save('jm-mbest', String(mBest)); }
     renderMarathonBar();
@@ -448,37 +646,52 @@
   }
 
   // ── Logique DUEL ──
-  function startDuel(idx, challenger) {
+  // fresh = toujours repartir de zéro (nouveau duel choisi ici) ; sinon on reprend
+  // la sauvegarde — utile quand on rouvre un lien de défi déjà commencé.
+  function startDuel(idx, challenger, fresh) {
     var code = duelEncode(idx);
-    var saved = loadJSON('jm-duel-' + code, null);
-    duel = saved && saved.code === code ? saved : { code: code, targetName: DATA[idx][0], g: [], done: false, won: false };
+    var saved = fresh ? null : loadJSON('jm-duel-' + code, null);
+    duel = saved && saved.code === code ? saved : { code: code, targetName: DATA[idx][0], g: [], done: false, won: false, t0: Date.now() };
+    if (!duel.done && !duel.t0) duel.t0 = Date.now();
     duel.target = findPlayer(duel.targetName);
     duel.challenger = challenger || duel.challenger || null;
     el['duel-intro'].hidden = true;
   }
   function saveDuel() {
-    var copy = { code: duel.code, targetName: duel.targetName, g: duel.g, done: duel.done, won: duel.won, challenger: duel.challenger };
+    var copy = { code: duel.code, targetName: duel.targetName, g: duel.g, done: duel.done, won: duel.won, challenger: duel.challenger, t0: duel.t0, secs: duel.secs };
     save('jm-duel-' + duel.code, JSON.stringify(copy));
   }
   function finishDuel(won) {
     duel.done = true; duel.won = won;
+    if (duel.secs == null && duel.t0) duel.secs = Math.round((Date.now() - duel.t0) / 1000);
     saveDuel();
+    if (won) confetti(90);
     showEnd();
   }
   function duelLink() {
-    return SITE + '#d=' + duel.code + '&s=' + (duel.won ? duel.g.length : 0) + (pseudo ? '&n=' + encodeURIComponent(pseudo) : '');
+    return SITE + '#d=' + duel.code + '&s=' + (duel.won ? duel.g.length : 0) +
+      (duel.secs != null ? '&t=' + duel.secs : '') +
+      (pseudo ? '&n=' + encodeURIComponent(pseudo) : '');
+  }
+  function duelShareMsg() {
+    return '⚔️ Je te défie sur un Joueur Mystère ! ' +
+      (duel.won ? 'Je l’ai trouvé en ' + duel.g.length + '/6' + (duel.secs != null ? ' (⏱ ' + fmtSecs(duel.secs) + ')' : '') + '.' : 'Moi je ne l’ai pas eu…') +
+      ' À toi : ' + duelLink();
   }
   el['btn-duel-new'].addEventListener('click', function () {
-    startDuel(Math.floor(Math.random() * DATA.length), null);
+    startDuel(randomStar(), null, true);
     hideEnd();
     renderBoard(); renderStartHint(); renderHint();
     el['guess-input'].focus();
   });
-  el['btn-duel-link'].addEventListener('click', function () {
-    askPseudo(function () {
-      copyToClipboard('⚔️ Je te défie sur un Joueur Mystère ! ' + (duel.won ? 'Trouvé en ' + duel.g.length + '/6.' : 'Moi je ne l’ai pas eu…') + ' À toi : ' + duelLink(),
-        '✓ Lien de défi copié ! Envoie-le à ta victime.');
-    });
+  el['duel-url'].addEventListener('focus', function () { this.select(); });
+  el['btn-copy-duel'].addEventListener('click', function () {
+    el['duel-url'].select();
+    copyToClipboard(duelShareMsg(), '✓ Lien copié ! Envoie-le à ta victime.');
+  });
+  el['btn-send-duel'].hidden = !navigator.share;
+  el['btn-send-duel'].addEventListener('click', function () {
+    navigator.share({ text: duelShareMsg() }).then(function () { el['copy-feedback'].textContent = '✓ Défi envoyé !'; }, function () {});
   });
 
   // ── Verdict d'un essai ──
@@ -522,6 +735,7 @@
         return p ? guessEmojis(marksFor(p, TARGET_JOUR)) : '';
       }).filter(Boolean);
       var head = '⚽ Joueur Mystère n°' + PUZZLE_NUM + ' — ' + (jour.won ? jour.g.length : 'X') + '/' + MAX_TRIES;
+      if (jour.won && jour.secs != null) head += ' · ⏱ ' + fmtSecs(jour.secs);
       if (jour.won && statsJour.streak > 1) head += ' 🔥' + statsJour.streak;
       return [head].concat(grid).concat(['À toi de jouer : ' + SITE]).join('\n');
     }
@@ -564,16 +778,20 @@
     var q = norm(el['guess-input'].value);
     activeSug = -1;
     if (q.length < 2) { el.suggestions.hidden = true; currentSugs = []; return; }
+    // Anti-triche : on ne cherche que sur le NOM du joueur — taper un club ou un
+    // pays ne liste plus rien (sinon la recherche servait d'outil de déduction).
     var done = guesses().map(norm);
-    currentSugs = DATA.filter(function (p) {
-      if (done.indexOf(norm(p[0])) !== -1) return false;
-      var n = norm(p[0]);
-      return n.indexOf(q) !== -1 || norm(p[1]).indexOf(q) !== -1 || norm(p[3]).indexOf(q) !== -1 ||
-        (ALIASES[n] && ALIASES[n].indexOf(q) !== -1);
-    }).slice(0, 6);
+    currentSugs = [];
+    for (var i = 0; i < DATA.length && currentSugs.length < 6; i++) {
+      var n = NORMS[i];
+      if (n.indexOf(q) === -1 && !(ALIASES[n] && ALIASES[n].indexOf(q) !== -1)) continue;
+      if (done.indexOf(n) !== -1) continue;
+      currentSugs.push(DATA[i]);
+    }
     if (!currentSugs.length) { el.suggestions.hidden = true; return; }
     el.suggestions.innerHTML = currentSugs.map(function (p, i) {
-      return '<div class="sug" data-i="' + i + '">' + p[4] + ' ' + p[0] + '<small>' + p[1] + '</small></div>';
+      return '<div class="sug" data-i="' + i + '">' + clubBadge(p[1]) +
+        '<span class="sug-name">' + flagHTML(p[4]) + ' ' + esc(p[0]) + '</span><small>' + esc(p[1]) + '</small></div>';
     }).join('');
     el.suggestions.hidden = false;
   }
@@ -621,6 +839,8 @@
       marathonOver = false;
       endedRun = null;
       if (!ranked() && !run) newPracticeRun();
+      armMarathonDeadline(false);
+      if (marathonExpired()) endMarathon(true); // le temps a tourné pendant l'absence : la série tombe
       renderMarathonBar();
       renderPodium();
       if (LB) refreshClassement();
@@ -645,13 +865,14 @@
   // ── Boutons marathon ──
   el['btn-again'].addEventListener('click', function () {
     if (MODE === 'duel') {
-      startDuel(Math.floor(Math.random() * DATA.length), null);
+      startDuel(randomStar(), null, true);
       hideEnd(); renderBoard(); renderStartHint(); renderHint();
       el['guess-input'].focus();
       return;
     }
     marathonOver = false;
     endedRun = null;
+    armMarathonDeadline(true);
     renderMarathonBar();
     hideEnd();
     renderBoard(); renderStartHint(); renderHint();
@@ -674,12 +895,14 @@
   // ── Démarrage : rendu synchrone ──
   if (incomingDuel) {
     startDuel(incomingDuel.idx, incomingDuel.challengerScore !== null
-      ? { name: incomingDuel.challengerName, score: incomingDuel.challengerScore } : null);
+      ? { name: incomingDuel.challengerName, score: incomingDuel.challengerScore, secs: incomingDuel.challengerSecs } : null);
     setMode('duel');
   } else {
     setMode('jour');
   }
   renderStatsJour();
+  var appChronoTimer = setInterval(tickAppChrono, 500);
+  tickAppChrono();
 
   // ── PWA ──
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
