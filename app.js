@@ -159,17 +159,27 @@
   var PUZZLE_NUM = daysBetween(EPOCH, DAY) + 1;
   var AGE_YEAR = new Date().getFullYear();
   function ageOf(p) { return AGE_YEAR - p[7]; }
-  var ROUND_SECS = 90; // marathon CLASSÉ : temps par joueur (anti-triche : pas de réflexion infinie)
+  var ROUND_SECS = 120; // marathon CLASSÉ : temps par joueur (anti-triche : pas de réflexion infinie ; 120 s = réglé pour la saisie mobile)
   // Difficultés de l'entraînement libre. Le classé, lui, est identique pour
-  // tout le monde (stars + 90 s) : un classement n'a de sens qu'à règles égales.
+  // tout le monde (stars + 120 s) : un classement n'a de sens qu'à règles égales.
   var DIFFS = {
     facile:    { label: 'Facile',    tous: false, secs: null },
-    moyen:     { label: 'Moyen',     tous: false, secs: 90 },
+    moyen:     { label: 'Moyen',     tous: false, secs: 120 },
     difficile: { label: 'Difficile', tous: true,  secs: null },
-    elite:     { label: 'Élite',     tous: true,  secs: 90 }
+    elite:     { label: 'Élite',     tous: true,  secs: 120 }
   };
   var diff = load('jm-diff', 'facile');
   if (!DIFFS[diff]) diff = 'facile';
+  // 🃏 Jokers roguelite (entraînement libre UNIQUEMENT — le classé reste à règles égales).
+  // À chaque nouvelle série : 3 jokers tirés au sort, on en choisit 1, il vaut pour toute la run.
+  var JOKER_DEFS = {
+    souffle:   { icon: '⏱️', nom: 'Souffle',        desc: '+45 s au chrono de chaque joueur' },
+    loupe:     { icon: '🏟️', nom: 'La loupe',       desc: 'Le championnat du mystère est révélé' },
+    etatcivil: { icon: '🎂', nom: 'État civil',     desc: 'L’âge exact du mystère est révélé' },
+    septieme:  { icon: '🧤', nom: 'Le 7e essai',    desc: '7 essais au lieu de 6' },
+    boussole:  { icon: '🧭', nom: 'La boussole',    desc: 'Le poste exact est révélé (pas juste la ligne)' },
+    coeur:     { icon: '❤️', nom: 'Seconde chance', desc: 'Le premier raté ne termine pas la série' }
+  };
   function fmtSecs(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
   function norm(s) {
@@ -192,7 +202,7 @@
   // ── Éléments ──
   var el = {};
   ['puzzle-meta', 'tab-jour', 'tab-marathon', 'tab-duel', 'marathon-bar', 'mb-label', 'mb-serie', 'mb-best', 'btn-abandon',
-   'diff-picker', 'podium-diff', 'btn-duel-expert',
+   'diff-picker', 'podium-diff', 'btn-duel-expert', 'joker-draft', 'btn-theme',
    'start-hint', 'guess-zone', 'guess-input', 'btn-guess', 'suggestions', 'notice', 'chrono', 'tries', 'notes', 'board',
    'round-banner', 'hint', 'duel-intro', 'btn-duel-new', 'endcard', 'end-visual', 'end-verdict', 'end-player', 'end-desc', 'end-streak',
    'end-social', 'btn-again', 'btn-share', 'duel-share', 'duel-url', 'btn-copy-duel', 'btn-send-duel', 'wa-duel', 'copy-feedback', 'countdown',
@@ -249,7 +259,15 @@
     if (s >= best) { save(key, String(Math.max(s, best))); return true; }
     return false;
   }
-  function timeLimit() { return ranked() ? ROUND_SECS : DIFFS[diff].secs; }
+  function timeLimit() {
+    if (ranked()) return ROUND_SECS;
+    var s = DIFFS[diff].secs;
+    if (s && run && run.joker === 'souffle') s += 45;
+    return s;
+  }
+  function maxTriesNow() {
+    return (MODE === 'marathon' && !ranked() && run && run.joker === 'septieme') ? 7 : MAX_TRIES;
+  }
   function pickPracticeTarget() {
     var all = DIFFS[diff].tous ? DATA : STAR_IDX.map(function (i) { return DATA[i]; });
     var pool = all.filter(function (p) { return recent.indexOf(p[0]) === -1; });
@@ -284,6 +302,20 @@
   var incomingDuel = parseDuelHash();
 
   if (!storageOK) el['storage-warn'].hidden = false;
+
+  // ── Thème : album crème (jour) ou stade en nocturne (nuit) ──
+  var theme = load('jm-theme', 'jour');
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', theme === 'nuit' ? 'nuit' : 'jour');
+    el['btn-theme'].textContent = theme === 'nuit' ? '☀️' : '🌙';
+    el['btn-theme'].setAttribute('aria-label', theme === 'nuit' ? 'Passer au thème jour' : 'Passer au thème nocturne');
+  }
+  el['btn-theme'].addEventListener('click', function () {
+    theme = theme === 'nuit' ? 'jour' : 'nuit';
+    save('jm-theme', theme);
+    applyTheme();
+  });
+  applyTheme();
 
   // ── Pseudo (pour le classement et les duels) ──
   var pseudo = load('jm-pseudo', '');
@@ -415,7 +447,7 @@
 
   function renderTries() {
     el.tries.innerHTML = '';
-    for (var i = 0; i < MAX_TRIES; i++) {
+    for (var i = 0; i < maxTriesNow(); i++) {
       var d = document.createElement('div');
       d.className = 'try-dot' + (i < guesses().length ? ' used' : '');
       el.tries.appendChild(d);
@@ -496,8 +528,14 @@
   function renderStartHint() {
     if (MODE === 'duel' && !duel) { el['start-hint'].style.display = 'none'; return; }
     var t = target();
+    var jk = (MODE === 'marathon' && !ranked() && run) ? run.joker : null;
+    var extra = '';
+    if (jk === 'loupe') extra = '🃏 Joker : il joue en <strong>' + esc(t[2]) + '</strong>.';
+    else if (jk === 'etatcivil') extra = '🃏 Joker : il a <strong>' + ageOf(t) + ' ans</strong>.';
+    else if (jk === 'boussole') extra = '🃏 Joker : il est <strong>' + POS_LABEL[t[6]] + '</strong>.';
     el['start-hint'].innerHTML = '<span class="mini-jersey">' + jerseySVG(t, true) + '</span>' +
-      '<span>🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.</span>';
+      '<span>🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.' +
+      (extra ? '<br>' + extra : '') + '</span>';
     el['start-hint'].style.display = isDone() ? 'none' : 'flex';
   }
   function renderHint() {
@@ -508,6 +546,7 @@
       // Mystère hors stars (Difficile, Élite, duel expert) : le championnat est
       // offert dès 2 essais — un joueur pointu doit rester trouvable par déduction.
       if (t[8] !== 1 && n >= 2) show.push('🏟️ Coup de pouce : il joue en ' + t[2] + '.');
+      if (t[8] !== 1 && n >= 4) show.push('👕 Son club : ' + t[1] + '.');
       if (n >= 4) {
         var initials = t[0].split(' ').map(function (w) { return w.charAt(0) + '.'; }).join(' ');
         show.push('🕵️ Ses initiales : « ' + initials + ' »');
@@ -557,18 +596,68 @@
     marathonOver = false;
     endedRun = null;
     newPracticeRun();
-    armMarathonDeadline(true);
     renderMarathonBar();
     renderPodium();
     hideEnd();
     renderBoard();
     renderStartHint();
     renderHint();
+    if (renderDraft()) return; // nouvelle série = nouveau draft de jokers
+    armMarathonDeadline(true);
     el['guess-input'].focus();
   }
   el['diff-picker'].addEventListener('click', function (e) {
     var b = e.target.closest('.diff-chip');
     if (b) setDiff(b.dataset.d);
+  });
+
+  // ── 🃏 Draft de joker : au début de chaque série libre, 3 cartes, un choix ──
+  function draftPending() {
+    return MODE === 'marathon' && !ranked() && !marathonOver && run &&
+      !run.joker && run.serie === 0 && run.g.length === 0;
+  }
+  function draw3() {
+    var keys = Object.keys(JOKER_DEFS).filter(function (k) {
+      return k !== 'souffle' || DIFFS[diff].secs; // sans chrono, « Souffle » ne sert à rien
+    });
+    for (var i = keys.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = keys[i]; keys[i] = keys[j]; keys[j] = t;
+    }
+    return keys.slice(0, 3);
+  }
+  function renderDraft() {
+    if (!draftPending()) { el['joker-draft'].hidden = true; return false; }
+    // Le tirage est persisté : recharger la page ne re-mélange pas les cartes
+    if (!run.draft || run.draft.length !== 3) { run.draft = draw3(); saveMarathonState(); }
+    if (run.deadline) { delete run.deadline; saveMarathonState(); } // le chrono attend le choix
+    el['joker-draft'].innerHTML = '<div class="jd-title">🃏 Choisis ton joker pour cette série</div>' +
+      run.draft.map(function (k) {
+        var d = JOKER_DEFS[k];
+        return '<button class="joker-card" data-j="' + k + '"><span class="ji">' + d.icon +
+          '</span><b>' + d.nom + '</b><span class="jd">' + d.desc + '</span></button>';
+      }).join('');
+    el['joker-draft'].hidden = false;
+    el['guess-zone'].style.display = 'none';
+    el['start-hint'].style.display = 'none';
+    el.chrono.hidden = true;
+    el.hint.hidden = true;
+    el.notes.hidden = true;
+    return true;
+  }
+  el['joker-draft'].addEventListener('click', function (e) {
+    var b = e.target.closest('.joker-card');
+    if (!b || !run || run.joker) return;
+    run.joker = b.dataset.j;
+    delete run.draft;
+    run.lifeUsed = false;
+    saveMarathonState();
+    el['joker-draft'].hidden = true;
+    el['guess-zone'].style.display = 'block';
+    armMarathonDeadline(true);
+    renderMarathonBar();
+    renderBoard(); renderStartHint(); renderHint();
+    el['guess-input'].focus();
   });
 
   // ── Fin de partie ──
@@ -743,7 +832,36 @@
     var st = marathonState();
     return !!(st && st.deadline && Date.now() > st.deadline);
   }
-  function endMarathon(timedOut) {
+  function nextRoundBanner(msg, graceMs) {
+    armMarathonDeadline(true, graceMs);
+    renderMarathonBar();
+    el['round-banner'].textContent = msg;
+    el['round-banner'].hidden = false;
+    el['guess-zone'].style.display = 'none';
+    setTimeout(function () {
+      el['round-banner'].hidden = true;
+      if (MODE === 'marathon' && !marathonOver) {
+        el['guess-zone'].style.display = 'block';
+        renderBoard();
+        renderStartHint();
+        renderHint();
+        el['guess-input'].focus();
+      }
+    }, graceMs);
+  }
+  function endMarathon(timedOut, force) {
+    // ❤️ Seconde chance (joker) : le premier raté du libre est pardonné —
+    // on révèle le joueur, on passe au suivant, la série continue.
+    // `force` = abandon volontaire : pas de pardon.
+    if (!force && !ranked() && run && run.joker === 'coeur' && !run.lifeUsed) {
+      run.lifeUsed = true;
+      var missed = findPlayer(run.target);
+      run.target = pickPracticeTarget()[0];
+      run.g = [];
+      saveMarathonState();
+      nextRoundBanner('❤️ Seconde chance ! C’était ' + missed[0] + ' — la série continue…', 2300);
+      return;
+    }
     marathonOver = true;
     var wasRanked = ranked();
     var s = wasRanked ? mday.serie : run.serie;
@@ -764,25 +882,12 @@
     var t = target();
     if (ranked()) { mday.serie += 1; mday.g = []; }
     else { run.serie += 1; run.target = pickPracticeTarget()[0]; run.g = []; }
-    armMarathonDeadline(true, 1600); // nouveau joueur = nouveau compte à rebours (+ le temps de la bannière)
+    saveMarathonState();
     confetti(26);
     var s = serieActuelle();
     var bk = 'jm-mbest-' + diffKey(ranked());
     if (s > (parseInt(load(bk, '0'), 10) || 0)) save(bk, String(s));
-    renderMarathonBar();
-    el['round-banner'].textContent = '✅ C’était bien ' + t[0] + ' ! Série : ' + s + ' — joueur suivant…';
-    el['round-banner'].hidden = false;
-    el['guess-zone'].style.display = 'none';
-    setTimeout(function () {
-      el['round-banner'].hidden = true;
-      if (MODE === 'marathon') {
-        el['guess-zone'].style.display = 'block';
-        renderBoard();
-        renderStartHint();
-        renderHint();
-        el['guess-input'].focus();
-      }
-    }, 1600);
+    nextRoundBanner('✅ C’était bien ' + t[0] + ' ! Série : ' + s + ' — joueur suivant…', 1600);
   }
 
   // ── Logique DUEL ──
@@ -859,7 +964,7 @@
     renderTries();
 
     var win = p[0] === t[0];
-    var out = guesses().length >= MAX_TRIES && !win;
+    var out = guesses().length >= maxTriesNow() && !win;
     setTimeout(function () {
       if (MODE === 'jour') {
         if (win) finishJour(true); else if (out) finishJour(false); else renderHint();
@@ -984,8 +1089,10 @@
       marathonOver = false;
       endedRun = null;
       if (!ranked() && !run) newPracticeRun();
-      armMarathonDeadline(false);
-      if (marathonExpired()) endMarathon(true); // le temps a tourné pendant l'absence : la série tombe
+      if (!draftPending()) { // pendant le draft, le chrono attend le choix du joker
+        armMarathonDeadline(false);
+        if (marathonExpired()) endMarathon(true); // le temps a tourné pendant l'absence : la série tombe
+      }
       renderMarathonBar();
       renderPodium();
       if (LB) refreshClassement();
@@ -1003,6 +1110,7 @@
     renderBoard();
     renderStartHint();
     renderHint();
+    if (m === 'marathon') renderDraft(); // le draft, s'il est dû, recouvre la zone de jeu
   }
   el['tab-jour'].addEventListener('click', function () { setMode('jour'); });
   el['tab-marathon'].addEventListener('click', function () { setMode('marathon'); });
@@ -1016,10 +1124,11 @@
     }
     marathonOver = false;
     endedRun = null;
-    armMarathonDeadline(true);
     renderMarathonBar();
     hideEnd();
     renderBoard(); renderStartHint(); renderHint();
+    if (renderDraft()) return; // nouvelle série = nouveau draft de jokers
+    armMarathonDeadline(true);
     el['guess-input'].focus();
   });
   var abandonArmed = false;
@@ -1033,7 +1142,7 @@
     }
     abandonArmed = false;
     el['btn-abandon'].textContent = 'Abandonner';
-    endMarathon();
+    endMarathon(false, true); // abandon volontaire : la seconde chance ne joue pas
   });
 
   // ── Démarrage : rendu synchrone ──

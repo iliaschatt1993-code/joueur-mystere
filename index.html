@@ -23,6 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;700&display=swap">
+<script>try{if(localStorage.getItem('jm-theme')==='nuit')document.documentElement.setAttribute('data-theme','nuit')}catch(e){}</script>
 <style>
   /* ═══════════════════════════════════════════════════════════════════
      ALBUM PANINI — ÉDITION COLLECTOR (v6)
@@ -32,7 +33,14 @@
   :root {
     --page: #f5ecd7;
     --page-dot: #e4d7ba;
-    --ink: #211e19;
+    --ink: #211e19;          /* fonds « ardoise » et accents encre */
+    --text: #211e19;         /* texte principal */
+    --line: #211e19;         /* bordures des vignettes et boutons */
+    --on-dark: #fdfaf2;      /* texte posé sur fonds foncés ou colorés */
+    --panel: #2e2a24;        /* dégradé des blocs ardoise (haut) */
+    --panel-2: #211e19;      /* dégradé des blocs ardoise (bas) */
+    --card: #fdf6e0;         /* fond de la carte de fin */
+    --wm: rgba(33,30,25,.055); /* filigrane terrain */
     --red: #c8342c;
     --red-deep: #971f19;
     --green: #2c7a44;
@@ -47,11 +55,41 @@
     --cell: #eadfc6;
     --paper: #fbf4e2;
     --sticker-border: #fdfaf2;
+    --glow-ok: none;         /* halo néon des cases exactes (nocturne) */
     --shadow-hard: 3px 4px 0 rgba(33,30,25,.22);
     --shadow-cell: 1.5px 2px 0 rgba(33,30,25,.16);
     --font-display: "Alfa Slab One", "Rockwell", serif;
     --font-cond: "Barlow Condensed", "Arial Narrow", sans-serif;
     --font-body: "Barlow", "Helvetica Neue", sans-serif;
+  }
+  /* 🌙 STADE EN NOCTURNE — le même album, sous les projecteurs.
+     Bleu nuit profond, gazon néon, or vif : la version « soirée gaming ». */
+  html[data-theme="nuit"] {
+    --page: #0b1120;
+    --page-dot: #1a2440;
+    --text: #eaeefc;
+    --line: #3b4a78;
+    --panel: #1d2745;
+    --panel-2: #101830;
+    --card: #161f38;
+    --wm: rgba(120,150,255,.07);
+    --red: #e04338;
+    --red-deep: #a5241c;
+    --green: #1fa457;
+    --green-deep: #0f7a3c;
+    --grass-a: #17984f;
+    --grass-b: #1ba758;
+    --gold: #ffd447;
+    --gold-deep: #d5a71a;
+    --gold-pale: #2c2810;
+    --yellow: #eab92c;
+    --yellow-deep: #93700d;
+    --cell: #1b2440;
+    --paper: #141c33;
+    --sticker-border: #2c3a63;
+    --glow-ok: 0 0 14px rgba(35,200,105,.4);
+    --shadow-hard: 3px 4px 0 rgba(0,0,0,.5);
+    --shadow-cell: 1.5px 2px 0 rgba(0,0,0,.45);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -59,7 +97,7 @@
     background: var(--page);
     background-image: radial-gradient(var(--page-dot) 1px, transparent 1.5px);
     background-size: 14px 14px;
-    color: var(--ink);
+    color: var(--text);
     font-family: var(--font-body);
     min-height: 100dvh;
     overflow-x: hidden;
@@ -68,9 +106,9 @@
   body::before {
     content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
     background-image:
-      radial-gradient(circle 170px at 50% 300px, transparent 165px, rgba(33,30,25,.055) 166px 170px, transparent 171px),
-      radial-gradient(circle 5px at 50% 300px, rgba(33,30,25,.055) 4px, transparent 5px),
-      linear-gradient(rgba(33,30,25,.045) 2px, transparent 2px);
+      radial-gradient(circle 170px at 50% 300px, transparent 165px, var(--wm) 166px 170px, transparent 171px),
+      radial-gradient(circle 5px at 50% 300px, var(--wm) 4px, transparent 5px),
+      linear-gradient(var(--wm) 2px, transparent 2px);
     background-repeat: no-repeat, no-repeat, no-repeat;
     background-position: 0 0, 0 0, 0 299px;
     background-size: 100% 100%, 100% 100%, 100% 3px;
@@ -105,7 +143,7 @@
   header.sticker h1 {
     font-family: var(--font-display);
     font-weight: 400;
-    color: var(--sticker-border);
+    color: var(--on-dark);
     font-size: clamp(24px, 6.5vw, 34px);
     letter-spacing: .02em;
     line-height: 1.05;
@@ -126,8 +164,8 @@
     font-family: var(--font-cond); font-weight: 700; font-size: 15px;
     letter-spacing: .08em; text-transform: uppercase;
     padding: 11px 4px;
-    background: var(--paper); color: var(--ink);
-    border: 2.5px solid var(--ink); border-radius: 4px;
+    background: var(--paper); color: var(--text);
+    border: 2.5px solid var(--line); border-radius: 4px;
     cursor: pointer;
     box-shadow: 2px 3px 0 rgba(33,30,25,.2);
     transition: background .18s, color .18s, transform .16s, box-shadow .16s;
@@ -135,7 +173,7 @@
   .mode-tab[aria-selected="true"] {
     background:
       repeating-linear-gradient(90deg, var(--grass-a) 0 9px, var(--grass-b) 9px 18px);
-    color: var(--sticker-border);
+    color: var(--on-dark);
     border-color: var(--green-deep);
     box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.22), 2.5px 3.5px 0 rgba(33,30,25,.26);
     transform: rotate(-1.1deg) scale(1.045);
@@ -173,8 +211,8 @@
   /* ── Bandeau marathon : ardoise de stade ── */
   #marathon-bar {
     display: none; margin: 0 2px 12px;
-    background: linear-gradient(178deg, #2c2822, var(--ink));
-    color: var(--sticker-border);
+    background: linear-gradient(178deg, var(--panel), var(--panel-2));
+    color: var(--on-dark);
     border-radius: 5px; padding: 9px 14px;
     border: 1px solid rgba(33,30,25,.5);
     box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.35), 2px 3px 0 rgba(33,30,25,.2);
@@ -186,7 +224,7 @@
     font-family: var(--font-cond); font-weight: 600; font-size: 12px;
     letter-spacing: .06em; text-transform: uppercase;
     background: none; border: 1.5px solid rgba(253,250,242,.5); border-radius: 3px;
-    color: var(--sticker-border); padding: 4px 10px; cursor: pointer;
+    color: var(--on-dark); padding: 4px 10px; cursor: pointer;
     transition: border-color .15s, color .15s;
   }
   #marathon-bar button:hover { border-color: var(--gold); color: var(--gold); }
@@ -211,8 +249,8 @@
   }
   .diff-chip {
     font-family: var(--font-cond); text-align: center;
-    background: var(--paper); color: var(--ink);
-    border: 2px solid var(--ink); border-radius: 5px;
+    background: var(--paper); color: var(--text);
+    border: 2px solid var(--line); border-radius: 5px;
     padding: 8px 6px 7px; cursor: pointer;
     box-shadow: 2px 3px 0 rgba(33,30,25,.18);
     transition: background .18s, color .18s, transform .16s, box-shadow .16s;
@@ -224,7 +262,7 @@
   .diff-chip span { display: block; font-size: 11px; font-weight: 600; opacity: .62; margin-top: 2px; }
   .diff-chip[aria-pressed="true"] {
     background: repeating-linear-gradient(90deg, var(--grass-a) 0 9px, var(--grass-b) 9px 18px);
-    color: var(--sticker-border);
+    color: var(--on-dark);
     border-color: var(--green-deep);
     box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.22), 2.5px 3.5px 0 rgba(33,30,25,.26);
     transform: rotate(-.8deg) scale(1.03);
@@ -236,6 +274,51 @@
     .diff-chip:hover:not([aria-pressed="true"]) { transform: translateY(-1.5px); box-shadow: 2px 4.5px 0 rgba(33,30,25,.26); }
   }
   .diff-chip:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  /* ── 🃏 Draft de joker : trois cartes, un choix, une run unique ── */
+  #joker-draft {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin: 0 2px 14px;
+  }
+  #joker-draft[hidden] { display: none; }
+  #joker-draft .jd-title {
+    grid-column: 1 / -1; text-align: center;
+    font-family: var(--font-cond); font-weight: 700; font-size: 12px;
+    letter-spacing: .15em; text-transform: uppercase; opacity: .65;
+  }
+  .joker-card {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: var(--paper); color: var(--text);
+    border: 2.5px solid var(--line); border-radius: 6px;
+    padding: 12px 7px 11px; cursor: pointer;
+    box-shadow: var(--shadow-hard);
+    font-family: var(--font-cond); text-align: center;
+    transition: transform .16s, box-shadow .16s, border-color .16s;
+    animation: chip-in .3s ease both;
+  }
+  .joker-card:nth-child(2) { animation-delay: .05s; }
+  .joker-card:nth-child(3) { animation-delay: .1s; }
+  .joker-card:nth-child(4) { animation-delay: .15s; }
+  .joker-card .ji { font-size: 30px; line-height: 1.1; filter: drop-shadow(1.5px 2px 0 rgba(33,30,25,.2)); }
+  .joker-card b { font-weight: 700; font-size: 14.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .joker-card .jd { font-size: 11.5px; font-weight: 600; opacity: .68; line-height: 1.3; }
+  @media (hover: hover) {
+    .joker-card:hover { transform: translateY(-3px) rotate(-.6deg); border-color: var(--gold-deep); box-shadow: 3px 6px 0 rgba(33,30,25,.28); }
+  }
+  .joker-card:active { transform: translate(1px,2px); box-shadow: none; }
+  .joker-card:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  /* ── Bouton thème (🌙/☀️) : coin du bandeau titre ── */
+  #btn-theme {
+    position: absolute; top: 7px; right: 7px; z-index: 2;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(33,30,25,.28); border: 1.5px solid rgba(253,250,242,.45);
+    font-size: 15px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, transform .15s;
+  }
+  #btn-theme:hover { background: rgba(33,30,25,.45); transform: rotate(-12deg); }
+  #btn-theme:focus-visible { outline: 2.5px solid var(--gold); }
 
   /* ── Indice de départ : billet vert ── */
   #start-hint {
@@ -256,15 +339,15 @@
     flex: 1; min-width: 0;
     font-family: var(--font-cond); font-size: 19px; font-weight: 600;
     padding: 12px 14px;
-    border: 2.5px solid var(--ink); border-radius: 5px;
-    background: var(--sticker-border); color: var(--ink);
+    border: 2.5px solid var(--line); border-radius: 5px;
+    background: var(--sticker-border); color: var(--text);
     box-shadow: inset 1.5px 2px 0 rgba(33,30,25,.07);
     transition: box-shadow .15s;
   }
   #guess-input:focus { outline: 3px solid var(--gold); outline-offset: 1px; }
   #btn-guess {
     font-family: var(--font-display); font-size: 15px; letter-spacing: .03em;
-    color: var(--sticker-border);
+    color: var(--on-dark);
     background: linear-gradient(175deg, #348750, var(--green) 45%, var(--green-deep));
     border: 2.5px solid var(--green-deep); border-radius: 5px;
     padding: 0 18px; cursor: pointer;
@@ -276,7 +359,7 @@
   #suggestions {
     position: absolute; left: 0; right: 0; top: calc(100% + 5px); z-index: 10;
     background: var(--sticker-border);
-    border: 2.5px solid var(--ink); border-radius: 5px;
+    border: 2.5px solid var(--line); border-radius: 5px;
     box-shadow: 4px 5px 0 rgba(33,30,25,.28);
     max-height: 246px; overflow-y: auto;
   }
@@ -301,7 +384,7 @@
   #chrono {
     margin: 0 auto 10px; width: fit-content; min-width: 86px; text-align: center;
     font-family: var(--font-cond); font-weight: 700; font-size: 15px; letter-spacing: .06em;
-    background: var(--ink); color: var(--sticker-border);
+    background: var(--panel-2); color: var(--on-dark);
     border-radius: 999px; padding: 5px 18px;
     font-variant-numeric: tabular-nums;
     border: 1.5px solid rgba(33,30,25,.6);
@@ -311,12 +394,12 @@
   #chrono.mara {
     background: linear-gradient(90deg,
       var(--green-deep) calc(var(--t, 1) * 100%),
-      #3b362d calc(var(--t, 1) * 100%));
+      var(--panel) calc(var(--t, 1) * 100%));
   }
   #chrono.low {
     background: linear-gradient(90deg,
       var(--red-deep) calc(var(--t, 1) * 100%),
-      #3b362d calc(var(--t, 1) * 100%));
+      var(--panel) calc(var(--t, 1) * 100%));
     animation: chrono-pulse 1s ease infinite;
   }
   #chrono.low:not(.mara) { background: var(--red-deep); }
@@ -326,7 +409,7 @@
   #tries { display: flex; gap: 7px; justify-content: center; margin: 2px 0 12px; }
   .try-dot {
     width: 12px; height: 16px; border-radius: 2.5px;
-    border: 1.5px solid var(--ink); background: var(--paper);
+    border: 1.5px solid var(--line); background: var(--paper);
     box-shadow: 1px 1.5px 0 rgba(33,30,25,.18);
     transition: transform .2s, background .2s;
   }
@@ -340,7 +423,7 @@
   #notes[hidden] { display: none; }
   .note-chip {
     background: var(--paper);
-    border: 2px solid rgba(33,30,25,.75); border-radius: 5px;
+    border: 2px solid var(--line); border-radius: 5px;
     box-shadow: var(--shadow-cell);
     padding: 4px 9px 5px; min-width: 62px;
     display: flex; flex-direction: column; align-items: center; gap: 1px;
@@ -389,7 +472,7 @@
   .head-row span {
     font-family: var(--font-cond); font-weight: 700; font-size: 11px;
     letter-spacing: .12em; text-transform: uppercase; text-align: center;
-    color: var(--ink); opacity: .7;
+    color: var(--text); opacity: .7;
   }
   .cell {
     background: var(--cell);
@@ -416,6 +499,7 @@
   .cell.ok {
     background: repeating-linear-gradient(90deg, var(--grass-a) 0 9px, var(--grass-b) 9px 18px);
     color: #fdfaf2; text-shadow: 1px 1px 0 rgba(33,30,25,.28);
+    box-shadow: var(--shadow-cell), var(--glow-ok);
   }
   .cell.ok .sub { opacity: .92; }
   .cell.close {
@@ -423,8 +507,8 @@
     color: #2c2410;
   }
   .cell.name-cell {
-    background: linear-gradient(178deg, #2e2a24, var(--ink));
-    color: var(--sticker-border); font-size: 14px; letter-spacing: .02em;
+    background: linear-gradient(178deg, var(--panel), var(--panel-2));
+    color: var(--on-dark); font-size: 14px; letter-spacing: .02em;
   }
   .cell.name-cell.ok { background: repeating-linear-gradient(90deg, var(--grass-a) 0 9px, var(--grass-b) 9px 18px); }
   .cell.duo { flex-direction: row; gap: 3px; padding: 3px; }
@@ -497,7 +581,7 @@
     border-radius: 2px;
     background:
       radial-gradient(rgba(201,162,39,.07) 1px, transparent 1.4px),
-      linear-gradient(168deg, #fdf6e0, var(--gold-pale));
+      linear-gradient(168deg, var(--card), var(--gold-pale));
     background-size: 9px 9px, 100% 100%;
   }
   @keyframes foil-spin { to { --foil: 360deg; } }
@@ -534,7 +618,7 @@
   #endcard .btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   #endcard button {
     font-family: var(--font-display); font-size: 14px;
-    color: var(--sticker-border);
+    color: var(--on-dark);
     background: linear-gradient(175deg, #d8453a, var(--red) 45%, var(--red-deep));
     border: 2.5px solid var(--red-deep); border-radius: 5px;
     padding: 10px 22px; cursor: pointer;
@@ -551,9 +635,9 @@
   #stats { margin: 18px 2px 0; display: flex; gap: 8px; justify-content: center; font-family: var(--font-cond); text-align: center; }
   #stats > div {
     flex: 1; max-width: 112px;
-    background: linear-gradient(178deg, #2e2a24, var(--ink));
-    color: var(--sticker-border);
-    border: 2px solid rgba(33,30,25,.85); border-radius: 5px;
+    background: linear-gradient(178deg, var(--panel), var(--panel-2));
+    color: var(--on-dark);
+    border: 2px solid var(--line); border-radius: 5px;
     box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.3), 2px 3px 0 rgba(33,30,25,.18);
     padding: 8px 4px 7px;
   }
@@ -570,14 +654,14 @@
   #podium ol { list-style: none; display: flex; flex-direction: column; gap: 5px; }
   #podium li {
     display: flex; justify-content: space-between; align-items: center;
-    background: var(--paper); border: 2px solid var(--ink); border-radius: 4px;
+    background: var(--paper); border: 2px solid var(--line); border-radius: 4px;
     padding: 7px 12px; font-family: var(--font-cond); font-weight: 600; font-size: 15px;
     font-variant-numeric: tabular-nums;
     box-shadow: var(--shadow-cell);
   }
   #podium li:first-child {
     border-color: var(--gold-deep);
-    background: linear-gradient(170deg, #fdf6e0, var(--gold-pale));
+    background: linear-gradient(170deg, var(--card), var(--gold-pale));
     box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.35), var(--shadow-cell);
   }
   #podium li .medal { width: 26px; }
@@ -595,10 +679,10 @@
   #duel-intro[hidden] { display: none; }
   #duel-intro p { font-size: 14px; line-height: 1.5; max-width: 40ch; }
   #duel-intro .di-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-  #duel-intro #btn-duel-expert { background: linear-gradient(178deg, #2e2a24, var(--ink)); border-color: var(--ink); box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.4), 2px 3px 0 rgba(33,30,25,.25); }
+  #duel-intro #btn-duel-expert { background: linear-gradient(178deg, var(--panel), var(--panel-2)); border-color: var(--text); box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.4), 2px 3px 0 rgba(33,30,25,.25); }
   #duel-intro button {
     font-family: var(--font-display); font-size: 15px;
-    color: var(--sticker-border);
+    color: var(--on-dark);
     background: linear-gradient(175deg, #d8453a, var(--red) 45%, var(--red-deep));
     border: 2.5px solid var(--red-deep); border-radius: 5px;
     padding: 12px 26px; cursor: pointer;
@@ -617,15 +701,15 @@
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
   #classement h2 button {
-    font-size: 14px; background: none; border: 1.5px solid var(--ink); border-radius: 4px;
-    cursor: pointer; padding: 1px 7px; color: var(--ink);
+    font-size: 14px; background: none; border: 1.5px solid var(--line); border-radius: 4px;
+    cursor: pointer; padding: 1px 7px; color: var(--text);
     transition: background .15s;
   }
   #classement h2 button:hover { background: rgba(201,162,39,.2); }
   #classement ol { list-style: none; display: flex; flex-direction: column; gap: 5px; }
   #classement li {
     display: flex; align-items: center; gap: 10px;
-    background: var(--paper); border: 2px solid var(--ink); border-radius: 4px;
+    background: var(--paper); border: 2px solid var(--line); border-radius: 4px;
     padding: 6px 12px; font-family: var(--font-cond); font-weight: 600; font-size: 15px;
     font-variant-numeric: tabular-nums;
     box-shadow: var(--shadow-cell);
@@ -635,7 +719,7 @@
   #classement li .score { font-weight: 700; color: var(--green-deep); }
   #classement li.me {
     border-color: var(--gold-deep);
-    background: linear-gradient(170deg, #fdf6e0, var(--gold-pale));
+    background: linear-gradient(170deg, var(--card), var(--gold-pale));
     box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.35), var(--shadow-cell);
   }
   #classement-note { text-align: center; font-size: 11px; opacity: .6; margin-top: 6px; }
@@ -659,13 +743,13 @@
   .pseudo-card h3 { font-family: var(--font-cond); font-weight: 700; font-size: 16px; letter-spacing: .04em; }
   .pseudo-card input {
     width: 100%; font-family: var(--font-cond); font-size: 18px; font-weight: 600;
-    padding: 10px 12px; border: 2.5px solid var(--ink); border-radius: 5px;
+    padding: 10px 12px; border: 2.5px solid var(--line); border-radius: 5px;
     background: var(--sticker-border);
   }
   .pseudo-card input:focus { outline: 3px solid var(--gold); }
   .pseudo-card button {
     font-family: var(--font-display); font-size: 14px;
-    color: var(--sticker-border);
+    color: var(--on-dark);
     background: linear-gradient(175deg, #348750, var(--green) 45%, var(--green-deep));
     border: 2.5px solid var(--green-deep); border-radius: 5px;
     padding: 10px 24px; cursor: pointer;
@@ -678,7 +762,7 @@
   .flag-chip {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 26px; padding: 1px 5px; border-radius: 3px;
-    background: var(--ink); color: var(--sticker-border);
+    background: var(--panel-2); color: var(--on-dark);
     font-family: var(--font-cond); font-weight: 700; font-size: 10px; letter-spacing: .06em;
     vertical-align: middle;
   }
@@ -701,14 +785,14 @@
   #duel-share .ds-title { font-family: var(--font-cond); font-weight: 700; font-size: 12px; letter-spacing: .13em; text-transform: uppercase; color: var(--gold-deep); }
   #duel-url {
     width: 100%; font-family: var(--font-body); font-size: 13px;
-    padding: 9px 10px; border: 2px solid var(--ink); border-radius: 5px;
-    background: var(--sticker-border); color: var(--ink);
+    padding: 9px 10px; border: 2px solid var(--line); border-radius: 5px;
+    background: var(--sticker-border); color: var(--text);
   }
   #duel-url:focus { outline: 3px solid var(--gold); }
   #duel-share .ds-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   #duel-share .ds-btns button, #duel-share .ds-btns a {
     font-family: var(--font-display); font-size: 13px;
-    color: var(--sticker-border);
+    color: var(--on-dark);
     background: linear-gradient(175deg, #348750, var(--green) 45%, var(--green-deep));
     border: 2.5px solid var(--green-deep); border-radius: 5px;
     padding: 9px 14px; cursor: pointer;
@@ -743,6 +827,7 @@
 <body>
 <div id="app">
   <header class="sticker">
+    <button id="btn-theme" type="button">🌙</button>
     <h1>⚽ LE JOUEUR MYSTÈRE</h1>
     <div class="meta" id="puzzle-meta">…</div>
   </header>
@@ -762,14 +847,16 @@
     Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
     <p><strong>☀️ Le jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
     <strong>🏆 Marathon</strong> : d'abord la tentative <strong>classée</strong> du jour — même séquence de stars pour tout le monde,
-    ⏳ 90 s par joueur (le chrono, c'est l'anti-triche du classement), la série grimpe jusqu'au premier raté.
+    ⏳ 120 s par joueur (le chrono, c'est l'anti-triche du classement), la série grimpe jusqu'au premier raté.
     Ensuite, <strong>entraînement libre</strong> en 4 difficultés : <strong>Facile</strong> (stars, sans chrono),
-    <strong>Moyen</strong> (stars, 90 s — les règles du classé), <strong>Difficile</strong> (toute la base, sans chrono),
-    <strong>Élite</strong> (toute la base, 90 s — la course contre la montre). Records et podiums séparés par difficulté.
+    <strong>Moyen</strong> (stars, 120 s — les règles du classé), <strong>Difficile</strong> (toute la base, sans chrono),
+    <strong>Élite</strong> (toute la base, 120 s — la course contre la montre). Records et podiums séparés par difficulté.
+    En libre, chaque série démarre par un <strong>🃏 draft de joker</strong> : trois cartes tirées au sort, tu en gardes une
+    pour toute la run (temps bonus, révélation, 7e essai, seconde chance…) — le classé, lui, se joue sans joker.
     <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur — stars ou expert (toute la base) —, envoie-le à un pote ;
     à égalité d'essais, le plus rapide gagne.</p>
     <p>🎓 Quand le mystère n'est <em>pas</em> une star (Difficile, Élite, duel expert), son
-    <strong>championnat est offert dès 2 essais</strong> : un joueur pointu doit rester trouvable par déduction.</p>
+    <strong>championnat est offert dès 2 essais</strong>, et son <strong>club dès 4</strong> : un joueur pointu doit rester trouvable par déduction.</p>
     <p>🔎 <strong>L'enquête</strong> (sous les pastilles d'essais) fait la déduction à ta place : elle accumule tout ce que
     tes essais ont <em>prouvé</em> — nation ou confédération, championnat, club, postes éliminés, et la fourchette d'âge
     calculée d'après les flèches. Un coup d'œil suffit, plus besoin de relire toute la grille.</p>
@@ -790,10 +877,12 @@
   <div id="diff-picker" hidden>
     <div class="dp-title">🎲 Difficulté de l'entraînement</div>
     <button class="diff-chip" data-d="facile"><b>Facile</b><span>⭐ stars · sans chrono</span></button>
-    <button class="diff-chip" data-d="moyen"><b>Moyen</b><span>⭐ stars · ⏳ 90 s</span></button>
+    <button class="diff-chip" data-d="moyen"><b>Moyen</b><span>⭐ stars · ⏳ 120 s</span></button>
     <button class="diff-chip" data-d="difficile"><b>Difficile</b><span>🌍 toute la base · sans chrono</span></button>
-    <button class="diff-chip" data-d="elite"><b>Élite</b><span>🌍 toute la base · ⏳ 90 s</span></button>
+    <button class="diff-chip" data-d="elite"><b>Élite</b><span>🌍 toute la base · ⏳ 120 s</span></button>
   </div>
+
+  <div id="joker-draft" hidden aria-label="Choix du joker de la série"></div>
 
   <div id="duel-intro" hidden>
     <p>⚔️ <strong>Le duel</strong> : tu joues un mystère tiré au sort, puis tu envoies le lien-défi à un pote.
@@ -884,8 +973,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=8"></script>
-<script src="config.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="data.js?v=9"></script>
+<script src="config.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
