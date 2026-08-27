@@ -199,6 +199,39 @@
   .try-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--ink); background: transparent; }
   .try-dot.used { background: var(--red); transform: scale(1.12); }
 
+  /* 🔎 L'enquête : tout ce que les essais ont prouvé, distillé en 5 fiches */
+  #notes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0 2px 12px; }
+  #notes[hidden] { display: none; }
+  .note-chip {
+    background: #fbf4e2;
+    border: 2px solid rgba(34,37,31,.75); border-radius: 4px;
+    box-shadow: 1.5px 2px 0 rgba(34,37,31,.15);
+    padding: 4px 9px 5px; min-width: 62px;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+    text-align: center;
+  }
+  .note-chip .nk {
+    font-family: var(--font-cond); font-weight: 700; font-size: 9px;
+    letter-spacing: .13em; text-transform: uppercase; opacity: .55;
+  }
+  .note-chip .nv {
+    font-family: var(--font-cond); font-weight: 700; font-size: 15px; line-height: 1.15;
+    display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .note-chip.note-ok { background: var(--green); border-color: var(--green-deep); color: #fdfaf2; }
+  .note-chip.note-ok .nk { opacity: .8; }
+  .note-chip.note-mid { background: var(--yellow); border-color: var(--gold-deep); color: #2c2410; }
+  .note-chip.note-mid .nk { opacity: .7; }
+  .note-chip .nx { font-size: 11px; font-weight: 600; opacity: .7; letter-spacing: 0; }
+  .note-chip .nv .club-badge { width: 16px; height: 16px; font-size: 7px; border-width: 1px; }
+  #notes .note-title {
+    align-self: center;
+    font-family: var(--font-cond); font-weight: 700; font-size: 10px;
+    letter-spacing: .14em; text-transform: uppercase; opacity: .55;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+  }
+
   /* Grille des essais */
   #board { display: flex; flex-direction: column; gap: 8px; margin: 0 2px; }
   .head-row, .guess-line { display: grid; grid-template-columns: 1.35fr 1fr 1.1fr .85fr .7fr; gap: 5px; }
@@ -217,7 +250,15 @@
     text-align: center; padding: 4px 2px; gap: 1px;
     font-family: var(--font-cond); font-weight: 600; font-size: 13px; line-height: 1.1;
     overflow: hidden;
+    position: relative;
   }
+  /* Marque de coin : lisible d'un coup d'œil, sans décoder la couleur */
+  .cell.ok::before, .cell.close::before, .tag.ok::before, .tag.close::before {
+    position: absolute; top: 0; right: 3px;
+    font-size: 9px; font-weight: 700; opacity: .8; line-height: 1.4;
+  }
+  .cell.ok::before, .tag.ok::before { content: '✓'; }
+  .cell.close::before, .tag.close::before { content: '≈'; }
   .cell .big { font-size: 17px; line-height: 1; }
   .cell .sub { font-size: 11px; font-weight: 500; opacity: .8; }
   .cell.ok { background: var(--green); color: #fdfaf2; }
@@ -230,6 +271,7 @@
     flex: 1; align-self: stretch; border-radius: 3px;
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 700;
+    position: relative;
   }
   .tag.ok { background: var(--green); color: #fdfaf2; }
   .tag.close { background: var(--yellow); color: #2c2410; }
@@ -507,7 +549,13 @@
     <p><strong>☀️ Le jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
     <strong>🏆 Marathon</strong> : la même séquence de mystères pour tout le monde, une tentative classée par jour — <strong>⏳ 90 secondes par joueur</strong>, la série grimpe jusqu'au premier raté (ou au temps écoulé), puis entraînement libre à volonté.
     <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur, envoie-le à un pote — à égalité d'essais, le plus rapide gagne.</p>
-    <p>🔎 La recherche ne répond qu'aux <strong>noms de joueurs</strong> : inutile de taper un club ou un pays pour lister des candidats.</p>
+    <p>🔎 <strong>L'enquête</strong> (sous les pastilles d'essais) fait la déduction à ta place : elle accumule tout ce que
+    tes essais ont <em>prouvé</em> — nation ou confédération, championnat, club, postes éliminés, et la fourchette d'âge
+    calculée d'après les flèches. Un coup d'œil suffit, plus besoin de relire toute la grille.</p>
+    <p>📇 <strong>La base</strong> : ~4 700 joueurs des grands championnats, tous proposables comme essais pour récolter des
+    indices. Mais le joueur mystère, lui, est <strong>toujours une star mondialement connue</strong> (256 joueurs) — tu
+    n'auras jamais à deviner un remplaçant obscur. La recherche ne répond qu'aux <strong>noms de joueurs</strong> :
+    inutile de taper un club ou un pays pour lister des candidats.</p>
   </details>
 
   <p id="storage-warn" hidden>⚠ Sauvegarde indisponible : parties et records ne seront pas conservés si tu fermes la page.</p>
@@ -538,6 +586,7 @@
 
   <div id="chrono" hidden></div>
   <div id="tries"></div>
+  <div id="notes" hidden aria-live="polite" aria-label="L'enquête : ce que tes essais ont prouvé"></div>
   <div id="board">
     <div class="head-row"><span>Joueur</span><span>Nation</span><span>Championnat</span><span>Club</span><span>Poste · Âge</span></div>
   </div>
@@ -601,8 +650,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=5"></script>
-<script src="config.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="data.js?v=6"></script>
+<script src="config.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

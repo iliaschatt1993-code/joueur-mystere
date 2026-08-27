@@ -181,7 +181,7 @@
   // ── Éléments ──
   var el = {};
   ['puzzle-meta', 'tab-jour', 'tab-marathon', 'tab-duel', 'marathon-bar', 'mb-label', 'mb-serie', 'mb-best', 'btn-abandon',
-   'start-hint', 'guess-zone', 'guess-input', 'btn-guess', 'suggestions', 'notice', 'chrono', 'tries', 'board',
+   'start-hint', 'guess-zone', 'guess-input', 'btn-guess', 'suggestions', 'notice', 'chrono', 'tries', 'notes', 'board',
    'round-banner', 'hint', 'duel-intro', 'btn-duel-new', 'endcard', 'end-visual', 'end-verdict', 'end-player', 'end-desc', 'end-streak',
    'end-social', 'btn-again', 'btn-share', 'duel-share', 'duel-url', 'btn-copy-duel', 'btn-send-duel', 'wa-duel', 'copy-feedback', 'countdown',
    'stats', 's-played', 's-rate', 's-streak', 's-max', 'podium', 'podium-list',
@@ -189,7 +189,7 @@
    'pseudo-dialog', 'pseudo-input', 'btn-pseudo-ok', 'storage-warn', 'data-count'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
-  el['data-count'].textContent = DATA.length.toLocaleString('fr-BE') + ' joueurs devinables · ' + STAR_IDX.length + ' mystères possibles';
+  el['data-count'].textContent = DATA.length.toLocaleString('fr-BE') + ' joueurs dans la recherche (tous proposables comme essais) · le mystère est toujours l’une des ' + STAR_IDX.length + ' stars';
   el['puzzle-meta'].textContent =
     'N°' + PUZZLE_NUM + ' · ' + new Date(DAY + 'T12:00:00').toLocaleDateString('fr-BE', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -403,6 +403,66 @@
     });
     renderTries();
   }
+  // ── 🔎 L'enquête : la déduction faite à la place du joueur ──
+  // Rien que du PROUVÉ par les essais (aucune triche) : sous la pression du chrono,
+  // relire 5 lignes de cases colorées coûte cher — ici tout est déjà distillé.
+  var LINE_WORD = { G: 'Gardien', D: 'Défenseur', M: 'Milieu', A: 'Attaquant' };
+  function noteChip(cls, label, valueHTML) {
+    return '<div class="note-chip' + (cls ? ' ' + cls : '') + '"><span class="nk">' + label + '</span><span class="nv">' + valueHTML + '</span></div>';
+  }
+  function struckList(items, cap) {
+    var shown = items.slice(0, cap);
+    var more = items.length - shown.length;
+    if (!shown.length) return '';
+    return '<span class="nx">✗ ' + shown.join(' ✗ ') + (more > 0 ? ' +' + more : '') + '</span>';
+  }
+  function renderNotes() {
+    var gs = guesses();
+    if (!gs.length || isDone() || (MODE === 'duel' && !duel)) { el.notes.hidden = true; return; }
+    var t = target();
+    var d = { nation: null, confed: null, natX: [], confX: [], league: null, lgX: [], club: null, clubX: [], pos: null, posX: [], min: 15, max: 45 };
+    gs.forEach(function (name) {
+      var p = findPlayer(name); if (!p) return;
+      if (p[3] === t[3]) { d.nation = p[3]; d.confed = p[5]; }
+      else {
+        if (d.natX.indexOf(p[4]) === -1) d.natX.push(p[4]);
+        if (p[5] === t[5]) d.confed = p[5];
+        else if (d.confX.indexOf(p[5]) === -1) d.confX.push(p[5]);
+      }
+      if (p[2] === t[2]) d.league = p[2]; else if (d.lgX.indexOf(p[2]) === -1) d.lgX.push(p[2]);
+      if (p[1] === t[1]) d.club = p[1]; else if (d.clubX.indexOf(p[1]) === -1) d.clubX.push(p[1]);
+      if (p[6] === t[6]) d.pos = p[6];
+      else if (POS_LINE[p[6]] === POS_LINE[t[6]] && d.posX.indexOf(p[6]) === -1) d.posX.push(p[6]);
+      // Fourchette d'âge : ↑/↓ borne un côté ; 🟨 (±2 ans) borne les deux
+      var a = ageOf(p), da = ageOf(t) - a;
+      if (da === 0) { d.min = a; d.max = a; }
+      else if (da > 0) { d.min = Math.max(d.min, a + (da <= 2 ? 1 : 3)); if (da <= 2) d.max = Math.min(d.max, a + 2); }
+      else { d.max = Math.min(d.max, a - (-da <= 2 ? 1 : 3)); if (-da <= 2) d.min = Math.max(d.min, a - 2); }
+    });
+    var html = '<span class="note-title">Enquête</span>';
+    // Nation : confirmée > confédération connue > éliminations
+    if (d.nation) html += noteChip('note-ok', 'Nation', flagHTML(t[4]) + ' ' + esc(d.nation));
+    else if (d.confed) html += noteChip('note-mid', 'Nation', esc(d.confed) + ' ✓ ' + struckList(d.natX.map(flagHTML), 3));
+    else html += noteChip('', 'Nation', (d.confX.length ? '≠ ' + d.confX.map(esc).join(', ') + ' ' : '') + struckList(d.natX.map(flagHTML), 3));
+    // Championnat
+    if (d.league) html += noteChip('note-ok', 'Champ.', flagHTML(LEAGUE_FLAG[d.league] || '⚽') + ' ' + esc(d.league));
+    else html += noteChip('', 'Champ.', struckList(d.lgX.map(function (l) { return flagHTML(LEAGUE_FLAG[l] || '⚽'); }), 4) || '—');
+    // Club
+    if (d.club) html += noteChip('note-ok', 'Club', clubBadge(d.club) + ' ' + esc(d.club));
+    else html += noteChip('', 'Club', struckList(d.clubX.map(clubBadge), 3) || '—');
+    // Poste : la ligne est donnée dès le départ, on affine avec les postes éliminés
+    if (d.pos) html += noteChip('note-ok', 'Poste', esc(POS_LABEL[d.pos]));
+    else html += noteChip('', 'Poste', esc(LINE_WORD[POS_LINE[t[6]]]) + ' ' + struckList(d.posX.map(esc), 3));
+    // Âge
+    if (d.min === d.max) html += noteChip('note-ok', 'Âge', d.min + ' ans');
+    else if (d.min > 15 && d.max < 45) html += noteChip('note-mid', 'Âge', d.min + '–' + d.max + ' ans');
+    else if (d.min > 15) html += noteChip('', 'Âge', '≥ ' + d.min + ' ans');
+    else if (d.max < 45) html += noteChip('', 'Âge', '≤ ' + d.max + ' ans');
+    else html += noteChip('', 'Âge', '—');
+    el.notes.innerHTML = html;
+    el.notes.hidden = false;
+  }
+
   function renderStartHint() {
     if (MODE === 'duel' && !duel) { el['start-hint'].style.display = 'none'; return; }
     var t = target();
@@ -416,6 +476,7 @@
       el.hint.textContent = '🕵️ Indice : ses initiales sont « ' + initials + ' »';
       el.hint.hidden = false;
     } else el.hint.hidden = true;
+    renderNotes(); // l'enquête suit le même cycle de vie que l'indice
   }
   function renderStatsJour() {
     el['s-played'].textContent = statsJour.played;
@@ -496,6 +557,7 @@
     el['guess-zone'].style.display = 'none';
     el['start-hint'].style.display = 'none';
     el.hint.hidden = true;
+    el.notes.hidden = true;
     el['copy-feedback'].textContent = '';
     el['end-social'].textContent = '';
     el['duel-share'].hidden = true;
@@ -851,6 +913,7 @@
       clearBoard(); renderTries();
       el['start-hint'].style.display = 'none';
       el.hint.hidden = true;
+      el.notes.hidden = true;
       return;
     }
     if (isDone()) showEnd(); else hideEnd();
