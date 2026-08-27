@@ -758,27 +758,39 @@
   }
   .pseudo-card button:active { transform: translate(1px,2px); box-shadow: none; }
 
-  /* ── Intro des nouveaux joueurs (même carte que le dialogue pseudo) ── */
+  /* ── Intro des nouveaux joueurs : une mini-partie qui se joue toute seule.
+     Animations 100 % CSS (fill backwards) : l'état final est dans le DOM,
+     jamais de rAF ni de JS pour afficher le contenu (leçon app RPG). ── */
   #intro-dialog {
     position: fixed; inset: 0; z-index: 50;
     background: rgba(33,30,25,.55);
     display: flex; align-items: center; justify-content: center; padding: 20px;
   }
   #intro-dialog[hidden] { display: none; }
-  .intro-card { width: min(400px, 92vw); text-align: center; gap: 10px; }
-  .intro-card .ic-line { font-size: 14px; line-height: 1.5; }
-  .ic-row { display: flex; gap: 5px; justify-content: center; width: 100%; }
-  .ic-cell {
-    flex: 1; max-width: 64px; border-radius: 5px; padding: 6px 2px 7px;
-    font-weight: 700; font-size: 14px;
-    background: var(--cell); border: 1.5px solid rgba(33,30,25,.25);
-    display: flex; flex-direction: column; gap: 2px; align-items: center;
+  .intro-card { width: min(410px, 94vw); text-align: center; gap: 11px; }
+  .ic-demo { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+  .ic-head, .ic-guess { display: flex; gap: 4px; align-items: stretch; }
+  .ic-head b { flex: 1; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; opacity: .6; font-weight: 600; }
+  .ic-nm {
+    flex: 0 0 74px; display: flex; align-items: center; gap: 5px;
+    font-family: var(--font-cond); font-weight: 700; font-size: 12px; text-align: left;
   }
-  .ic-cell i { font-style: normal; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; opacity: .65; font-weight: 600; }
-  .ic-cell.ok { background: repeating-linear-gradient(90deg, var(--grass-a) 0 9px, var(--grass-b) 9px 18px); color: var(--on-dark); border-color: var(--green-deep); }
-  .ic-cell.ok i { opacity: .85; }
+  .ic-nm em {
+    font-style: normal; width: 15px; height: 15px; border-radius: 50%; flex: none;
+    background: var(--panel-2); color: var(--on-dark); font-size: 9px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .ic-cell {
+    flex: 1; border-radius: 4px; padding: 6px 0; font-weight: 700; font-size: 12.5px;
+    background: var(--cell); border: 1.5px solid rgba(33,30,25,.25);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ic-cell.ok { background: repeating-linear-gradient(90deg, var(--grass-a) 0 8px, var(--grass-b) 8px 16px); color: var(--on-dark); border-color: var(--green-deep); }
   .ic-cell.close { background: var(--yellow); border-color: rgba(33,30,25,.35); }
-  .ic-caption { font-size: 12.5px; opacity: .85; line-height: 1.55; }
+  .ic-why { font-size: 11.5px; opacity: .8; text-align: left; padding-left: 78px; line-height: 1.35; }
+  .ic-why.gagne { font-weight: 700; opacity: 1; color: var(--green-deep); }
+  .ic-guess, .ic-why { animation: icIn .45s ease backwards; }
+  @keyframes icIn { from { opacity: 0; transform: translateY(7px); } }
   .ic-legend { font-size: 12px; opacity: .8; }
   .intro-card .btn-ghost {
     background: none; border: none; box-shadow: none; color: inherit;
@@ -995,17 +1007,25 @@
   <div id="intro-dialog" hidden>
     <div class="pseudo-card intro-card">
       <h3>⚽ UN JOUEUR CACHÉ · 6 ESSAIS</h3>
-      <p class="ic-line">Propose n'importe quel joueur : chaque case te dit si tu chauffes.</p>
-      <div class="ic-row" aria-hidden="true">
-        <div class="ic-cell ok"><i>Nation</i>🇫🇷</div>
-        <div class="ic-cell"><i>Champ.</i>🇪🇸</div>
-        <div class="ic-cell"><i>Club</i>⚪</div>
-        <div class="ic-cell close"><i>Poste</i>AD</div>
-        <div class="ic-cell"><i>Âge</i>27 ↑</div>
+      <div class="ic-demo" aria-hidden="true">
+        <div class="ic-head"><span class="ic-nm"></span><b>Nation</b><b>Champ.</b><b>Club</b><b>Poste</b><b>Âge</b></div>
+        <div class="ic-guess" style="animation-delay:.2s">
+          <span class="ic-nm"><em>1</em>MBAPPÉ</span>
+          <div class="ic-cell ok">🇫🇷</div><div class="ic-cell">🇪🇸</div><div class="ic-cell">⚪</div><div class="ic-cell close">AD</div><div class="ic-cell">27 ↑</div>
+        </div>
+        <div class="ic-why" style="animation-delay:.6s">→ il est français, attaquant, plus vieux que 27 ans</div>
+        <div class="ic-guess" style="animation-delay:1.6s">
+          <span class="ic-nm"><em>2</em>GIROUD</span>
+          <div class="ic-cell ok">🇫🇷</div><div class="ic-cell">🇫🇷</div><div class="ic-cell">🔵</div><div class="ic-cell ok">BU</div><div class="ic-cell">39 ↓</div>
+        </div>
+        <div class="ic-why" style="animation-delay:2s">→ avant-centre, plus jeune que 39 ans</div>
+        <div class="ic-guess" style="animation-delay:3s">
+          <span class="ic-nm"><em>3</em>BENZEMA</span>
+          <div class="ic-cell ok">🇫🇷</div><div class="ic-cell ok">🇸🇦</div><div class="ic-cell ok">✓</div><div class="ic-cell ok">BU</div><div class="ic-cell ok">38</div>
+        </div>
+        <div class="ic-why gagne" style="animation-delay:3.4s">🎉 Trouvé en 3 essais !</div>
       </div>
-      <p class="ic-caption">Essai : <strong>Mbappé</strong> → le mystère est <strong>français</strong> ✓, <strong>attaquant</strong> ≈,
-      <strong>plus vieux que 27 ans</strong> ↑ — et ne joue ni en Liga, ni au Real.</p>
-      <p class="ic-legend"><span class="lg g"></span> exact · <span class="lg y"></span> proche · <span class="lg n"></span> non</p>
+      <p class="ic-legend"><span class="lg g"></span> exact · <span class="lg y"></span> proche · <span class="lg n"></span> non · ↑↓ le mystère est plus vieux / plus jeune</p>
       <button id="btn-intro-go">C'EST PARTI</button>
       <button id="btn-intro-rules" class="btn-ghost" type="button">Toutes les règles</button>
     </div>
@@ -1026,8 +1046,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=11"></script>
-<script src="config.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<script src="data.js?v=12"></script>
+<script src="config.js?v=12"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
