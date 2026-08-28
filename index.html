@@ -1108,6 +1108,59 @@
     box-shadow: 0 0 10px rgba(201,162,39,.45);
     animation: curpulse 1.6s ease-in-out infinite;
   }
+
+  /* ── 📦 Le pack de fin de Coupe ── */
+  #pack-zone { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 4px 0 2px; }
+  #pack-zone[hidden] { display: none; }
+  #btn-pack {
+    font-family: var(--font-display); font-size: 17px;
+    color: var(--on-dark);
+    background: linear-gradient(175deg, #dab440, var(--gold) 45%, var(--gold-deep));
+    border: 3px solid var(--gold-deep); border-radius: 6px;
+    padding: 14px 30px; cursor: pointer;
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 14px rgba(201,162,39,.4), 2px 3px 0 rgba(33,30,25,.25);
+    text-shadow: 1px 1px 0 rgba(33,30,25,.3);
+    animation: packpulse 1.8s ease-in-out infinite;
+  }
+  #btn-pack:disabled { cursor: default; }
+  @keyframes packpulse { 50% { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 24px rgba(201,162,39,.65), 2px 3px 0 rgba(33,30,25,.25); } }
+  #btn-pack.shake { animation: packshake .14s linear infinite; }
+  @keyframes packshake {
+    0% { transform: translate(1.5px, -1px) rotate(-1.4deg); }
+    50% { transform: translate(-1.5px, 1px) rotate(1.4deg); }
+    100% { transform: translate(1px, 1.5px) rotate(-.8deg); }
+  }
+  #pack-card[hidden] { display: none; }
+  .pack-carte {
+    position: relative;
+    background: var(--paper); border: 3px solid var(--line); border-radius: 6px;
+    box-shadow: var(--shadow-hard);
+    padding: 16px 26px 13px; text-align: center;
+    animation: packpop .45s cubic-bezier(.2, 1.6, .4, 1) backwards;
+  }
+  @keyframes packpop { from { transform: scale(.4) rotate(-5deg); opacity: 0; } }
+  .pack-carte svg { width: 76px; height: auto; display: block; margin: 4px auto; }
+  .pack-carte b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 18px; }
+  .pack-carte .pc-club { display: block; font-family: var(--font-cond); font-weight: 600; font-size: 13px; opacity: .7; margin-top: 2px; }
+  .pack-carte .pc-band {
+    position: absolute; top: 6px; left: 8px;
+    font-family: var(--font-cond); font-weight: 700; font-size: 11px; letter-spacing: .08em;
+  }
+  .pack-carte .pc-note {
+    position: absolute; top: 4px; right: 10px;
+    font-family: var(--font-display); font-size: 22px; color: var(--gold-deep);
+  }
+  .pack-carte.r-argent { border-color: #8f9aad; }
+  .pack-carte.r-or { border-color: var(--gold-deep); box-shadow: 0 0 0 2px rgba(201,162,39,.45), var(--shadow-hard); }
+  .pack-carte.r-legende {
+    border: 3px solid transparent;
+    background-image: linear-gradient(var(--paper), var(--paper)),
+      linear-gradient(120deg, #8a6d15, #c9a227, #f3e6c2, #c9a227, #8a6d15);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 0 18px rgba(201,162,39,.55), var(--shadow-hard);
+  }
+  #pack-card .pc-new { font-family: var(--font-cond); font-weight: 700; font-size: 13px; margin-top: 8px; text-align: center; }
 </style>
 </head>
 <body>
@@ -1119,8 +1172,8 @@
   </header>
 
   <div id="modes" role="tablist" aria-label="Mode de jeu">
-    <button class="mode-tab" id="tab-jour" role="tab" aria-selected="true">☀️ Joueur du jour</button>
-    <button class="mode-tab" id="tab-coupe" role="tab" aria-selected="false">🏆 La Coupe</button>
+    <button class="mode-tab" id="tab-coupe" role="tab" aria-selected="true">🏆 La Coupe</button>
+    <button class="mode-tab" id="tab-jour" role="tab" aria-selected="false">☀️ Joueur du jour</button>
     <button class="mode-tab" id="tab-marathon" role="tab" aria-selected="false">⏱️ Marathon</button>
     <button class="mode-tab" id="tab-duel" role="tab" aria-selected="false">⚔️ Entre amis</button>
   </div>
@@ -1135,12 +1188,14 @@
     <span class="lg n"></span> non. La flèche indique si le mystère est plus vieux ↑ ou plus jeune ↓.
     Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
     <p><strong>☀️ Joueur du jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
-    <strong>🏆 La Coupe</strong> : un tournoi à élimination directe — 5 mystères (16es → finale) avec un budget de
-    <strong>18 essais pour tout le parcours</strong>, sans chrono. Chaque tour <strong>tire une carte au sort</strong> parmi
-    les ~1 350 joueurs cotés de l'album : 🟤 bronze une fois sur deux, ⚪ argent, 🟡 or (rare)… et parfois une
-    💎 <strong>LÉGENDE</strong> (les 49 plus grands, 5 % des tirages). La rareté de la carte en jeu est annoncée dès le
-    départ. Éliminé ou champion, chaque coupe se termine par une <strong>note sur 100</strong> ; les trophées s'ajoutent
-    à ton palmarès, et chaque joueur coté trouvé (dans n'importe quel mode) colle sa vignette dans ton <strong>📔 album</strong>.
+    <strong>🏆 La Coupe</strong> (le mode principal) : un tournoi à élimination directe — 5 mystères (16es → finale) avec
+    un budget de <strong>18 essais pour tout le parcours</strong>, sans chrono. Les adversaires sont
+    <strong>de plus en plus obscurs</strong> (16es : cote 84+ ; finale : cote 66-70) — mais plus le mystère est pointu,
+    plus le jeu t'aide : championnat puis club offerts d'office, initiales plus tôt, et même la moitié du nom pour les
+    plus confidentiels. Éliminé ou champion, la coupe se termine par une <strong>note sur 100</strong>… et un
+    <strong>📦 pack à ouvrir</strong> : une carte d'album tirée au sort, jamais en double — plus tu es allé loin,
+    meilleures sont les probabilités (💎 légende : 0,2 % en pack 16es, 15 % en pack champion ; et dans une bande,
+    chaque point de cote rend la carte ~1,7× plus rare — un 91 se mérite). L'album ne se remplit que comme ça.
     <strong>⏱️ Marathon</strong> : d'abord la tentative <strong>classée</strong> du jour — même séquence de stars pour tout le monde,
     ⏳ 120 s par joueur (le chrono, c'est l'anti-triche du classement), la série grimpe jusqu'au premier raté.
     Ensuite, <strong>entraînement libre</strong> en 4 difficultés : <strong>Facile</strong> (stars, sans chrono),
@@ -1190,18 +1245,19 @@
 
   <div id="coupe-intro" hidden>
     <p>🏆 <strong>La Coupe</strong> : 5 joueurs mystères à deviner d'affilée — des 16es à la finale —
-    avec un budget de <strong>18 essais pour tout le tournoi</strong>. Chaque essai économisé compte.
-    Au bout : une note sur 100, et peut-être le trophée.</p>
-    <p>🎰 Chaque tour tire une carte : 🟤 bronze fréquente, ⚪ argent, 🟡 or… ou l'une des
-    <strong>49 💎 LÉGENDES</strong>, rarissimes. C'est comme ça qu'on remplit l'album.</p>
+    avec un budget de <strong>18 essais pour tout le tournoi</strong>. Les adversaires sont de plus en plus
+    pointus (leur cote est annoncée, les indices s'adaptent), et chaque essai économisé compte.</p>
+    <p>📦 Au bout, quoi qu'il arrive : <strong>un pack à ouvrir</strong> — une nouvelle carte pour ton album,
+    jamais de doublon. Plus tu vas loin, meilleures sont tes chances de tirer une carte 🟡 or… voire l'une des
+    <strong>49 💎 LÉGENDES</strong>. Un 91 comme Mbappé ? Rarissime, même en pack champion.</p>
     <p class="ci-tour">16ES › 8ES › QUARTS › DEMI › FINALE</p>
     <div id="coupe-palmares"></div>
     <div class="di-btns">
       <button id="btn-coupe-new" type="button">🏆 LANCER LA COUPE</button>
       <button id="btn-album" type="button">📔 MON ALBUM</button>
     </div>
-    <p style="font-size:12px;opacity:.65">Chaque star trouvée — ici, au Joueur du jour, au Marathon ou en Duel —
-    colle sa vignette dans ton album.</p>
+    <p style="font-size:12px;opacity:.65">L'album (1 346 cartes) ne se remplit qu'en ouvrant des packs —
+    une Coupe jouée, un pack ouvert.</p>
   </div>
 
   <div id="duel-intro" hidden>
@@ -1253,6 +1309,10 @@
     <div id="end-note" hidden></div>
     <div class="streak" id="end-streak"></div>
     <div class="social" id="end-social"></div>
+    <div id="pack-zone" hidden>
+      <button id="btn-pack" type="button">📦 OUVRIR TON PACK</button>
+      <div id="pack-card" hidden></div>
+    </div>
     <button id="end-album" type="button" hidden></button>
     <div class="btns">
       <button id="btn-again" class="green" hidden>REJOUER</button>
@@ -1346,8 +1406,8 @@
       <button type="button" data-g="champ" aria-pressed="true">PAR CHAMPIONNAT</button>
       <button type="button" data-g="pays" aria-pressed="false">PAR PAYS</button>
     </div>
-    <p class="alb-note">Chaque joueur coté trouvé colle sa vignette ici — cadres 🟤 bronze, ⚪ argent, 🟡 or et
-    💎 légende (bord doré animé). Les maillots gris « ? » restent à découvrir.</p>
+    <p class="alb-note">Une Coupe jouée = un 📦 pack ouvert = une nouvelle vignette ici — cadres 🟤 bronze,
+    ⚪ argent, 🟡 or et 💎 légende (bord doré animé). Les maillots gris « ? » restent à découvrir.</p>
     <div id="album-grid"></div>
   </div>
 
@@ -1375,8 +1435,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=18"></script>
-<script src="config.js?v=18"></script>
-<script src="app.js?v=18"></script>
+<script src="data.js?v=19"></script>
+<script src="config.js?v=19"></script>
+<script src="app.js?v=19"></script>
 </body>
 </html>
