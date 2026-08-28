@@ -714,9 +714,13 @@
   }
   el['btn-pack'].addEventListener('click', function () {
     if (!coupe || coupe.packOpened || !(coupe.pack || coupe.packChoices)) return;
+    var run = coupe; // photo de la run : le timeout peut se déclencher en retard
     el['btn-pack'].disabled = true;
     el['btn-pack'].classList.add('shake');
     setTimeout(function () {
+      // Onglet caché (timers throttlés) ou relance rapide : si une nouvelle
+      // coupe a remplacé l'état, ce pack n'existe plus — ne rien faire.
+      if (coupe !== run || coupe.packOpened) return;
       if (coupe.packChoices) { // argent : on révèle le choix, la carte n'est pas encore gardée
         coupe.packRevealed = true;
         saveCoupe();
@@ -1078,7 +1082,9 @@
   el['btn-salon-new'].addEventListener('click', function () { ouvrirSalonDialog('creer', '🏟️ Nouveau salon'); });
   renderSalons();
   // Arrivée par lien de salon : #s=CODE → proposer de rejoindre
+  // (désactivé en v14 — les salons appartiennent au mode Entre amis, en sommeil)
   (function salonDepuisLien() {
+    return;
     var m = location.hash.match(/^#s=([A-Z0-9]{6})$/i);
     if (!m || !LB) return;
     var code = m[1].toUpperCase();
@@ -1967,13 +1973,11 @@
   });
 
   // ── Démarrage : rendu synchrone ──
-  if (incomingDuel) {
-    startDuel(incomingDuel.idx, incomingDuel.challengerScore !== null
-      ? { name: incomingDuel.challengerName, score: incomingDuel.challengerScore, secs: incomingDuel.challengerSecs } : null);
-    setMode('duel');
-  } else {
-    setMode('coupe'); // la Coupe est le mode principal
-  }
+  // v14 (recentrage) : la Coupe est le SEUL mode visible — Jour, Marathon et
+  // Duel sont en sommeil (code conservé, onglets masqués, liens #d= ignorés).
+  // Pour les réactiver : ré-afficher #modes dans index.html et restaurer ici
+  // l'aiguillage incomingDuel → setMode('duel').
+  setMode('coupe');
   renderStatsJour();
   var appChronoTimer = setInterval(tickAppChrono, 500);
   tickAppChrono();

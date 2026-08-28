@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Le Joueur Mystère — le Wordle du foot</title>
-<meta name="description" content="Devine le footballeur du jour en 6 essais — nation, championnat, club, poste et âge comme indices. Et quand tu as fini : le mode Marathon, en boucle.">
+<meta name="description" content="La Coupe : un tournoi de 5 footballeurs mystères, des 16es à la finale, 20 essais pour tout le parcours. Devine, colle tes vignettes, ouvre ton pack — et remplis ton album.">
 <link rel="canonical" href="https://joueurmystere.com/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Le Joueur Mystère — le Wordle du foot">
-<meta property="og:description" content="Un footballeur caché chaque jour, 6 essais pour le trouver. Mode Marathon pour enchaîner. À toi de jouer !">
+<meta property="og:description" content="Un tournoi de footballeurs mystères : 5 joueurs à deviner, un boss légendaire en finale, un pack de cartes au bout. À toi de jouer !">
 <meta property="og:url" content="https://joueurmystere.com/">
 <meta property="og:image" content="https://joueurmystere.com/og.jpg">
 <meta property="og:locale" content="fr_FR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Le Joueur Mystère — le Wordle du foot">
-<meta name="twitter:description" content="Un footballeur caché chaque jour, 6 essais pour le trouver. Mode Marathon pour enchaîner.">
+<meta name="twitter:description" content="Un tournoi de footballeurs mystères : 5 joueurs à deviner, un boss légendaire en finale, un pack de cartes au bout.">
 <meta name="twitter:image" content="https://joueurmystere.com/og.jpg">
 <meta name="theme-color" content="#c8342c">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1184,7 +1184,9 @@
     <div class="meta" id="puzzle-meta">…</div>
   </header>
 
-  <div id="modes" role="tablist" aria-label="Mode de jeu">
+  <!-- v14 : recentrage sur la Coupe — les onglets sont en sommeil, pas supprimés
+       (retirer style="display:none" pour réactiver les autres modes) -->
+  <div id="modes" role="tablist" aria-label="Mode de jeu" style="display:none">
     <button class="mode-tab" id="tab-coupe" role="tab" aria-selected="true">🏆 La Coupe</button>
     <button class="mode-tab" id="tab-jour" role="tab" aria-selected="false">☀️ Joueur du jour</button>
     <button class="mode-tab" id="tab-marathon" role="tab" aria-selected="false">⏱️ Marathon</button>
@@ -1195,13 +1197,12 @@
 
   <details class="rules">
     <summary>Comment jouer ?</summary>
-    <p>Devine le footballeur en <strong>6 essais</strong>. Sa <strong>ligne</strong> (gardien, défenseur, milieu, attaquant) t'est donnée dès le départ.
+    <p>Devine le footballeur caché. Sa <strong>ligne</strong> (gardien, défenseur, milieu, attaquant) t'est donnée dès le départ.
     Chaque essai compare <strong>nation, championnat, club, poste et âge</strong> avec le joueur mystère :
     <span class="lg g"></span> exact · <span class="lg y"></span> proche (même confédération, même championnat, même ligne de jeu, ou âge à 2 ans près) ·
     <span class="lg n"></span> non. La flèche indique si le mystère est plus vieux ↑ ou plus jeune ↓.
     Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
-    <p><strong>☀️ Joueur du jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
-    <strong>🏆 La Coupe</strong> (le mode principal) : un tournoi à élimination directe — 5 mystères (16es → finale) avec
+    <p><strong>🏆 La Coupe</strong> : un tournoi à élimination directe — 5 mystères (16es → finale) avec
     un budget de <strong>20 essais pour tout le parcours</strong>, sans chrono. Le tournoi <strong>monte vers la
     gloire</strong> : des joueurs confirmés d'abord (indices renforcés au fil des tours — championnat, club, initiales,
     puis le nom qui se dévoile lettre par lettre), et en finale, un <strong>💎 boss légendaire</strong> que tout le monde
@@ -1210,25 +1211,16 @@
     <strong>note sur 100</strong>… et un <strong>📦 pack à ouvrir</strong>, jamais en double : un pack ⚪ argent se
     révèle en <strong>3 cartes — tu en gardes une</strong> ; plus tu es allé loin, meilleures sont les chances d'or ou
     de légende (💎 : 1 % en pack 16es, 25 % en pack champion — et dans une bande, chaque point de cote rend la carte
-    ~1,7× plus rare : un 91 se mérite). Après 3 packs argent d'affilée, l'or est garanti.
-    <strong>⏱️ Marathon</strong> : d'abord la tentative <strong>classée</strong> du jour — même séquence de stars pour tout le monde,
-    ⏳ 120 s par joueur (le chrono, c'est l'anti-triche du classement), la série grimpe jusqu'au premier raté.
-    Ensuite, <strong>entraînement libre</strong> en 4 difficultés : <strong>Facile</strong> (stars, sans chrono),
-    <strong>Moyen</strong> (stars, 120 s — les règles du classé), <strong>Difficile</strong> (toutes les cartes de l'album, sans chrono),
-    <strong>Élite</strong> (toutes les cartes, 120 s — la course contre la montre). Records et podiums séparés par difficulté.
-    En libre, chaque série démarre par un <strong>🃏 draft de joker</strong> : trois cartes tirées au sort, tu en gardes une
-    pour toute la run (temps bonus, révélation, 7e essai, seconde chance…) — le classé, lui, se joue sans joker.
-    <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur — stars ou expert (toute la base) —, envoie-le à un pote ;
-    à égalité d'essais, le plus rapide gagne.</p>
-    <p>🎓 Quand le mystère n'est <em>pas</em> une star (Difficile, Élite, duel expert), son
-    <strong>championnat est offert dès 2 essais</strong>, et son <strong>club dès 4</strong> : un joueur pointu doit rester trouvable par déduction.</p>
+    ~1,7× plus rare : un 91 se mérite). Après 3 packs argent d'affilée, l'or est garanti.</p>
+    <p>🎓 <strong>Les indices s'adaptent au tour</strong> : plus on avance, plus le jeu aide (championnat, club,
+    initiales, puis le nom qui se dévoile lettre par lettre après chaque essai raté) — sauf en finale, où la légende
+    se joue presque sans filet. Aucun mystère n'est un mur : avec assez d'essais, on finit toujours par le trouver.</p>
     <p>🔎 <strong>L'enquête</strong> (sous les pastilles d'essais) fait la déduction à ta place : elle accumule tout ce que
     tes essais ont <em>prouvé</em> — nation ou confédération, championnat, club, postes éliminés, et la fourchette d'âge
     calculée d'après les flèches. Un coup d'œil suffit, plus besoin de relire toute la grille.</p>
     <p>📇 <strong>La base</strong> : ~16 000 joueurs de 45 championnats (notes officielles EA FC), tous proposables
-    comme essais pour récolter des indices. Au Joueur du jour et au Marathon, le mystère est <strong>toujours une
-    star</strong> ; à la Coupe, c'est une carte de l'album (486 joueurs confirmés) — et sa bande de rareté
-    (💎/🟡/⚪) est annoncée dès le départ. La recherche ne répond
+    comme essais pour récolter des indices. Le mystère, lui, est <strong>toujours une carte de l'album</strong>
+    (486 joueurs confirmés) — et sa bande de rareté (💎/🟡/⚪) est annoncée dès le départ. La recherche ne répond
     qu'aux <strong>noms de joueurs</strong> : inutile de taper un club ou un pays pour lister des candidats.</p>
   </details>
 
@@ -1369,7 +1361,7 @@
 
   <div id="intro-dialog" hidden>
     <div class="pseudo-card intro-card">
-      <h3>⚽ UN JOUEUR CACHÉ · 6 ESSAIS</h3>
+      <h3>⚽ DEVINE LE JOUEUR CACHÉ</h3>
       <div class="ic-demo" aria-hidden="true">
         <div class="ic-head"><span class="ic-nm"></span><b>Nation</b><b>Champ.</b><b>Club</b><b>Poste</b><b>Âge</b></div>
         <div class="ic-guess" style="animation-delay:.2s">
@@ -1389,8 +1381,11 @@
         <div class="ic-why gagne" style="animation-delay:3.4s">🎉 Trouvé en 3 essais !</div>
       </div>
       <p class="ic-legend"><span class="lg g"></span> exact · <span class="lg y"></span> proche · <span class="lg n"></span> non · ↑↓ le mystère est plus vieux / plus jeune</p>
+      <p class="ic-legend">🏆 <strong>La Coupe</strong> : 5 mystères, des 16es à la finale, avec <strong>20 essais
+      pour tout le tournoi</strong>. Chaque joueur deviné rejoint ton <strong>📔 album</strong>, et un
+      <strong>📦 pack</strong> t'attend au bout — quoi qu'il arrive.</p>
       <div class="ic-perso">
-        <input id="intro-pseudo" type="text" maxlength="20" autocomplete="off" placeholder="Ton pseudo (classement &amp; duels)">
+        <input id="intro-pseudo" type="text" maxlength="20" autocomplete="off" placeholder="Ton pseudo — optionnel">
         <select id="intro-club"><option value="">⭐ Ton club de cœur — optionnel</option></select>
       </div>
       <button id="btn-intro-go">C'EST PARTI</button>
@@ -1453,8 +1448,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=20"></script>
-<script src="config.js?v=20"></script>
-<script src="app.js?v=20"></script>
+<script src="data.js?v=21"></script>
+<script src="config.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>
