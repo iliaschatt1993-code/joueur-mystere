@@ -203,6 +203,16 @@
     boussole:  { icon: '🧭', nom: 'La boussole',    desc: 'Le poste exact est révélé (pas juste la ligne)' },
     coeur:     { icon: '❤️', nom: 'Seconde chance', desc: 'Le premier raté ne termine pas la série' }
   };
+  // 🃏 Jokers de COUPE (v16) : au lancement d'une run, 3 cartes tirées parmi 5,
+  // on en garde UNE pour tout le tournoi. La Coupe est un mode solo sans
+  // classement : les jokers y sont équitables par construction.
+  var JOKER_COUPE_DEFS = {
+    reserve:   { icon: '🎯', nom: 'La réserve',   desc: '+2 essais de budget pour le tournoi' },
+    loupe:     { icon: '🏟️', nom: 'La loupe',     desc: 'Le championnat de chaque mystère est révélé' },
+    etatcivil: { icon: '🎂', nom: 'État civil',   desc: 'L’âge exact de chaque mystère est révélé' },
+    boussole:  { icon: '🧭', nom: 'La boussole',  desc: 'Le poste exact de chaque mystère est révélé' },
+    souffleur: { icon: '🕵️', nom: 'Le souffleur', desc: 'Les initiales dès le 1er essai raté' }
+  };
   function fmtSecs(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
   function norm(s) {
@@ -268,6 +278,7 @@
    'salon-pseudo', 'salon-num', 'salon-couleurs', 'salon-avatar', 'btn-salon-ok', 'btn-salon-annuler',
    'tab-coupe', 'coupe-intro', 'btn-coupe-new', 'coupe-palmares', 'coupe-bar', 'coupe-rounds', 'coupe-budget',
    'btn-coupe-abandon', 'btn-album', 'album-panel', 'album-grid', 'album-count', 'btn-album-close', 'alb-toggle',
+   'btn-succes', 'succes-panel', 'succes-grid', 'succes-count', 'btn-succes-close', 'end-succes',
    'end-note', 'end-album', 'pack-zone', 'btn-pack', 'pack-card'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
@@ -344,7 +355,7 @@
   }
   function maxTriesNow() {
     // Coupe : 6 essais max par tour, mais jamais plus que le budget restant du tournoi
-    if (MODE === 'coupe') return coupe ? Math.max(1, Math.min(MAX_TRIES, COUPE_BUDGET - coupe.used)) : MAX_TRIES;
+    if (MODE === 'coupe') return coupe ? Math.max(1, Math.min(MAX_TRIES, coupeBudget() - coupe.used)) : MAX_TRIES;
     return (MODE === 'marathon' && !ranked() && run && run.joker === 'septieme') ? 7 : MAX_TRIES;
   }
   var lastPracticeLine = '';
@@ -392,6 +403,8 @@
   // run — même perdue — se termine par une note sur 100. C'est ce qui donne envie
   // de relancer (« j'étais en demi ! »), là où la survie infinie finit toujours mal.
   var COUPE_BUDGET = 20; // pour les 5 tours : la vraie ressource du mode
+  // Le budget effectif de la run passe par ici : le joker « réserve » l'étend.
+  function coupeBudget() { return COUPE_BUDGET + (coupe && coupe.joker === 'reserve' ? 2 : 0); }
   var COUPE_ROUNDS = [
     { label: '16es de finale', court: '16ES' },
     { label: '8es de finale', court: '8ES' },
@@ -520,9 +533,61 @@
     ALBUM_IDX.forEach(function (i) { if (album[DATA[i][0]]) n++; });
     return n;
   }
+  // ── 🏅 Succès (v16) : des jalons gravés pour de bon, la salle des trophées ──
+  // Débloqués entre les runs (fin de Coupe, ouverture de pack), jamais repris.
+  var succes = loadJSON('jm-succes', {}); // { id: jour du déblocage }
+  var SUCCES_DEFS = [
+    { id: 'premier-pas', icon: '🎫', nom: 'Premier match', desc: 'Disputer sa première Coupe',
+      cond: function () { return coupeStats.runs >= 1; } },
+    { id: 'huitiemes', icon: '📣', nom: 'Sorti du piège', desc: 'Atteindre les 8es de finale',
+      cond: function () { return (coupeStats.maxRound || 0) >= 1; } },
+    { id: 'carre', icon: '🎖️', nom: 'Le dernier carré', desc: 'Atteindre la demi-finale',
+      cond: function () { return (coupeStats.maxRound || 0) >= 3; } },
+    { id: 'finaliste', icon: '🥈', nom: 'Finaliste', desc: 'Atteindre la finale',
+      cond: function () { return (coupeStats.maxRound || 0) >= 4; } },
+    { id: 'champion', icon: '🏆', nom: 'Champion', desc: 'Gagner la Coupe',
+      cond: function () { return coupeStats.trophees >= 1; } },
+    { id: 'invincible', icon: '🛡️', nom: 'Invincible', desc: 'Champion en 5 essais — zéro raté',
+      cond: function () { return !!coupeStats.invincible; } },
+    { id: 'parfait', icon: '💯', nom: 'La note parfaite', desc: 'Finir une Coupe à 100/100',
+      cond: function () { return (coupeStats.best || 0) >= 100; } },
+    { id: 'triple', icon: '✨', nom: 'Le triplé', desc: 'Gagner 3 Coupes',
+      cond: function () { return coupeStats.trophees >= 3; } },
+    { id: 'dynastie', icon: '👑', nom: 'La dynastie', desc: 'Gagner 10 Coupes',
+      cond: function () { return coupeStats.trophees >= 10; } },
+    { id: 'habitue', icon: '🎟️', nom: 'L’habitué', desc: 'Disputer 10 Coupes',
+      cond: function () { return coupeStats.runs >= 10; } },
+    { id: 'abonne', icon: '🪑', nom: 'L’abonné', desc: 'Disputer 50 Coupes',
+      cond: function () { return coupeStats.runs >= 50; } },
+    { id: 'centenaire', icon: '💼', nom: 'Le centenaire', desc: 'Disputer 100 Coupes',
+      cond: function () { return coupeStats.runs >= 100; } },
+    { id: 'collectionneur', icon: '📔', nom: 'Le collectionneur', desc: '25 cartes dans l’album',
+      cond: function () { return albumCount() >= 25; } },
+    { id: 'vitrine', icon: '🗄️', nom: 'La vitrine', desc: '100 cartes dans l’album',
+      cond: function () { return albumCount() >= 100; } },
+    { id: 'musee', icon: '🏛️', nom: 'Le musée', desc: '250 cartes dans l’album',
+      cond: function () { return albumCount() >= 250; } },
+    { id: 'graal', icon: '💎', nom: 'Le graal', desc: 'Une carte légende dans l’album',
+      cond: function () { return BAND_IDX.legende.some(function (i) { return album[DATA[i][0]]; }); } },
+    { id: 'complet', icon: '🌟', nom: 'L’album complet', desc: 'Toutes les cartes de l’album',
+      cond: function () { return albumCount() >= ALBUM_IDX.length; } }
+  ];
+  function checkSucces() {
+    var neufs = [];
+    SUCCES_DEFS.forEach(function (s) {
+      if (!succes[s.id] && s.cond()) { succes[s.id] = DAY; neufs.push(s.id); }
+    });
+    if (neufs.length) save('jm-succes', JSON.stringify(succes));
+    return neufs;
+  }
+  function succesCount() {
+    var n = 0;
+    SUCCES_DEFS.forEach(function (s) { if (succes[s.id]) n++; });
+    return n;
+  }
   function coupeNote() {
     // Champion : 85 + bonus d'essais économisés (5 essais parfaits → 100).
-    if (coupe.won) return Math.min(100, 85 + (COUPE_BUDGET - coupe.used));
+    if (coupe.won) return Math.min(100, 85 + (coupeBudget() - coupe.used));
     return COUPE_ELIM_PTS[coupe.round];
   }
   function finalizeCoupe() {
@@ -539,9 +604,15 @@
       coupeStats.dry = tirage.band === 0 ? (coupeStats.dry || 0) + 1 : 0;
     }
     coupeStats.runs += 1;
-    if (coupe.won) coupeStats.trophees += 1;
+    if (coupe.won) {
+      coupeStats.trophees += 1;
+      if (coupe.used <= 5) coupeStats.invincible = true; // 5 tours, 5 essais : zéro raté
+    }
+    coupeStats.maxRound = Math.max(coupeStats.maxRound || 0, coupe.won ? 4 : coupe.round);
     coupeStats.best = Math.max(coupeStats.best || 0, coupe.note);
     save('jm-coupe-stats', JSON.stringify(coupeStats));
+    // 🏅 Les succès de la run (stats + album à jour) — montrés sur la carte de fin
+    coupe.succesNew = (coupe.succesNew || []).concat(checkSucces());
     saveCoupe();
   }
   function coupeBanner(msg, ms) {
@@ -574,11 +645,15 @@
       return;
     }
     coupe.round += 1;
-    if (COUPE_BUDGET - coupe.used <= 0) { coupe.sec = true; endCoupe(); return; } // à sec avant le tour suivant
+    // 🏅 Un stade atteint est un jalon gravé, même si la run échoue ensuite
+    coupeStats.maxRound = Math.max(coupeStats.maxRound || 0, coupe.round);
+    save('jm-coupe-stats', JSON.stringify(coupeStats));
+    coupe.succesNew = (coupe.succesNew || []).concat(checkSucces());
+    if (coupeBudget() - coupe.used <= 0) { coupe.sec = true; endCoupe(); return; } // à sec avant le tour suivant
     saveCoupe();
     confetti(30);
     coupeBanner('✅ C’était bien ' + t[0] + ' !' + (vignette ? ' 📔 +1 vignette !' : '') +
-      ' 🎯 ' + (COUPE_BUDGET - coupe.used) +
+      ' 🎯 ' + (coupeBudget() - coupe.used) +
       ' essais restants — direction ' + coupeRoundPhrase(coupe.round) + '…', 2300);
   }
   function endCoupe() {
@@ -595,7 +670,7 @@
       var cls = i < coupe.round ? ' done' : (i === coupe.round ? ' cur' : '');
       return '<span class="cr-step' + cls + '">' + (i < coupe.round ? '✓ ' : '') + r.court + '</span>';
     }).join('<span class="cr-sep">›</span>');
-    var rest = COUPE_BUDGET - coupe.used - coupe.g.length;
+    var rest = coupeBudget() - coupe.used - coupe.g.length;
     el['coupe-budget'].innerHTML = '🎯 <b>' + rest + '</b> essai' + (rest > 1 ? 's' : '') + ' pour tout le tournoi';
   }
   // Un pack tiré mais pas encore ouvert bloque le retour à l'affiche : fermer
@@ -606,10 +681,41 @@
     el['coupe-intro'].hidden = !visible;
     if (!visible) return;
     el['btn-album'].textContent = '📔 MON ALBUM · ' + albumCount() + '/' + ALBUM_IDX.length;
+    el['btn-succes'].textContent = '🏅 SUCCÈS · ' + succesCount() + '/' + SUCCES_DEFS.length;
     el['coupe-palmares'].innerHTML = coupeStats.runs
       ? '🏆 <b>' + coupeStats.trophees + '</b> trophée' + (coupeStats.trophees > 1 ? 's' : '') +
         ' · meilleure note <b>' + coupeStats.best + '</b>/100 · ' + coupeStats.runs + ' coupe' + (coupeStats.runs > 1 ? 's' : '') + ' disputée' + (coupeStats.runs > 1 ? 's' : '')
       : 'Personne au palmarès — sois le premier champion.';
+  }
+  // ── 🃏 Draft de joker de COUPE : 3 cartes au lancement, UNE pour tout le tournoi ──
+  function coupeDraftPending() {
+    return MODE === 'coupe' && coupe && !coupe.done && !coupe.joker &&
+      coupe.round === 0 && coupe.used === 0 && coupe.g.length === 0;
+  }
+  function coupeDraw3() {
+    var keys = Object.keys(JOKER_COUPE_DEFS);
+    for (var i = keys.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = keys[i]; keys[i] = keys[j]; keys[j] = t;
+    }
+    return keys.slice(0, 3);
+  }
+  function renderCoupeDraft() {
+    if (!coupeDraftPending()) { if (MODE === 'coupe') el['joker-draft'].hidden = true; return false; }
+    // Le tirage est persisté : recharger la page ne re-mélange pas les cartes
+    if (!coupe.draft || coupe.draft.length !== 3) { coupe.draft = coupeDraw3(); saveCoupe(); }
+    el['joker-draft'].innerHTML = '<div class="jd-title">🃏 Choisis ton joker pour ce tournoi</div>' +
+      coupe.draft.map(function (k) {
+        var d = JOKER_COUPE_DEFS[k];
+        return '<button class="joker-card" data-j="' + k + '"><span class="ji">' + d.icon +
+          '</span><b>' + d.nom + '</b><span class="jd">' + d.desc + '</span></button>';
+      }).join('');
+    el['joker-draft'].hidden = false;
+    el['guess-zone'].style.display = 'none';
+    el['start-hint'].style.display = 'none';
+    el.hint.hidden = true;
+    el.notes.hidden = true;
+    return true;
   }
   function startCoupeRun() {
     // Relancer sans avoir ouvert son pack : la carte est créditée silencieusement
@@ -620,6 +726,7 @@
     el['guess-zone'].style.display = 'block';
     renderCoupeIntro(); renderCoupeBar();
     renderBoard(); renderStartHint(); renderHint();
+    if (renderCoupeDraft()) return; // le tournoi commence par le choix du joker
     el['guess-input'].focus();
   }
   el['btn-coupe-new'].addEventListener('click', startCoupeRun);
@@ -679,6 +786,36 @@
     el['album-panel'].hidden = true;
     document.body.style.overflow = '';
   }
+  // ── 🏅 Salle des trophées : tous les succès, gagnés et à conquérir ──
+  function renderSucces() {
+    el['succes-count'].textContent = succesCount() + '/' + SUCCES_DEFS.length;
+    el['succes-grid'].innerHTML = SUCCES_DEFS.map(function (s) {
+      var d = succes[s.id];
+      var date = d ? new Date(d + 'T12:00:00').toLocaleDateString('fr-BE', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+      return '<div class="suc-item' + (d ? ' ok' : '') + '"><span class="si">' + s.icon + '</span>' +
+        '<span class="st"><b>' + s.nom + '</b><small>' + s.desc + '</small></span>' +
+        '<span class="sd">' + (d ? '✔ ' + date : '🔒') + '</span></div>';
+    }).join('');
+  }
+  function openSucces() {
+    renderSucces();
+    el['succes-panel'].hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSucces() {
+    el['succes-panel'].hidden = true;
+    document.body.style.overflow = '';
+  }
+  // Les succès de la run en cours, affichés sur la carte de fin
+  function renderEndSucces() {
+    var list = (coupe && coupe.succesNew) || [];
+    el['end-succes'].innerHTML = list.map(function (id) {
+      var s = null;
+      SUCCES_DEFS.forEach(function (d) { if (d.id === id) s = d; });
+      return s ? '<span class="suc-toast">' + s.icon + ' Succès débloqué : <b>' + s.nom + '</b></span>' : '';
+    }).join('');
+    el['end-succes'].hidden = !list.length;
+  }
   // 📦 Ouverture du pack : secousse d'une seconde (suspense), puis révélation —
   // état posé en synchrone + setTimeout, jamais de rAF (piège d'artifact connu)
   function packCardHTML(p) {
@@ -721,10 +858,13 @@
     coupe.pack = p[0];
     coupe.packOpened = true;
     collectPlayer(p);
+    // 🏅 La carte peut débloquer un succès d'album (graal, collectionneur…)
+    coupe.succesNew = (coupe.succesNew || []).concat(checkSucces());
     saveCoupe();
     var b = bandOf(p);
     confetti(b === 'legende' ? 170 : b === 'or' ? 90 : 40);
     renderPackZone();
+    renderEndSucces();
     el['end-album'].textContent = '📔 Ouvrir mon album (' + albumCount() + '/' + ALBUM_IDX.length + ')';
   }
   el['btn-pack'].addEventListener('click', function () {
@@ -753,7 +893,13 @@
   el['btn-album'].addEventListener('click', openAlbum);
   el['end-album'].addEventListener('click', openAlbum);
   el['btn-album-close'].addEventListener('click', closeAlbum);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !el['album-panel'].hidden) closeAlbum(); });
+  el['btn-succes'].addEventListener('click', openSucces);
+  el['btn-succes-close'].addEventListener('click', closeSucces);
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (!el['album-panel'].hidden) closeAlbum();
+    if (!el['succes-panel'].hidden) closeSucces();
+  });
   el['alb-toggle'].addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b || b.dataset.g === albGroup) return;
@@ -1251,11 +1397,14 @@
   function renderStartHint() {
     if (MODE === 'duel' && !duel) { el['start-hint'].style.display = 'none'; return; }
     var t = target();
-    var jk = (MODE === 'marathon' && !ranked() && run) ? run.joker : null;
+    var jk = (MODE === 'marathon' && !ranked() && run) ? run.joker
+           : (MODE === 'coupe' && coupe && !coupe.done ? coupe.joker : null);
     var extra = '';
     if (jk === 'loupe') extra = '🃏 Joker : il joue en <strong>' + esc(t[2]) + '</strong>.';
     else if (jk === 'etatcivil') extra = '🃏 Joker : il a <strong>' + ageOf(t) + ' ans</strong>.';
     else if (jk === 'boussole') extra = '🃏 Joker : il est <strong>' + POS_LABEL[t[6]] + '</strong>.';
+    else if (jk === 'reserve') extra = '🃏 Joker : <strong>+2 essais</strong> de budget.';
+    else if (jk === 'souffleur') extra = '🃏 Joker : les <strong>initiales</strong> dès le 1er essai raté.';
     // Défi reçu : annoncer l'adversaire et le score à battre dès l'arrivée,
     // pas seulement au verdict — c'est le crochet qui lance la partie.
     var defi = '';
@@ -1289,29 +1438,41 @@
   // jamais la connaissance pure.
   function aides(t) {
     var n = noteOf(t);
-    if (t[8] === 1 || !n || n >= 84) return { champ: Infinity, club: Infinity, init: 4, pendu: 6 };
-    if (n >= 80) return { champ: 2, club: 4, init: 4, pendu: 6 };
+    if (t[8] === 1 || !n || n >= 84) return { champ: Infinity, club: Infinity, init: 4, pendu: 5 };
+    if (n >= 80) return { champ: 2, club: 4, init: 4, pendu: 5 };
     return { champ: 1, club: 3, init: 3, pendu: 5 };
   }
-  // En Coupe (v13), les aides dépendent du TOUR, pas de la note : la demi pioche
-  // dans le même vivier que 8es/quarts mais aide moins — c'est ça, son cran de
-  // difficulté. La finale (💎 connue de tous) se joue quasi à sec.
+  // En Coupe, les aides dépendent du TOUR, pas de la note. Rééquilibrage v16
+  // (verdict d'Ilias sur v13-15 : « mur d'abord, solution donnée ensuite ») :
+  // le CONTEXTE (championnat, club) arrive tôt — il permet de RAISONNER, c'est
+  // le vrai jeu — et le nom (initiales, pendu) arrive tard et dévoile moins.
+  // Un gardien du Barça doit se trouver par déduction, pas par épellation.
+  // ⚠️ Un tour est plafonné à 6 essais (MAX_TRIES) : un seuil à 6 ne s'affiche
+  // qu'une fois le tour déjà perdu. Le pendu tombe donc au 5e raté — il reste
+  // alors UN essai, avec un tiers du nom : la vraie dernière chance.
   var AIDES_COUPE = [
-    { champ: Infinity, club: Infinity, init: 3, pendu: 5 }, // 16es · or 84-86
-    { champ: 2, club: Infinity, init: 3, pendu: 5 },        // 8es · argent 82-83
-    { champ: 1, club: 3, init: 3, pendu: 5 },               // quarts · argent 80-81
-    { champ: 2, club: 4, init: 4, pendu: 6 },               // demi · tout l'argent, aides réduites
-    { champ: Infinity, club: Infinity, init: 4, pendu: 6 }  // finale · légende 87+
+    { champ: 1, club: 3, init: 4, pendu: 5 },               // 16es · or connus
+    { champ: 1, club: 3, init: 4, pendu: 5 },               // 8es · argent 82-83
+    { champ: 1, club: 2, init: 4, pendu: 5 },               // quarts · argent 80-81 (plus obscurs → club plus tôt)
+    { champ: 1, club: 3, init: 4, pendu: 5 },               // demi · la difficulté vient du vivier large, plus des aides sèches
+    { champ: 3, club: Infinity, init: 4, pendu: 5 }         // finale · 💎 connue de tous — presque sec
   ];
   function aidesFor(t) {
-    if (MODE === 'coupe' && coupe && !coupe.done) return AIDES_COUPE[Math.min(coupe.round, 4)];
+    if (MODE === 'coupe' && coupe && !coupe.done) {
+      var a = AIDES_COUPE[Math.min(coupe.round, 4)];
+      // 🃏 « Le souffleur » : les initiales tombent dès le premier essai raté
+      if (coupe.joker === 'souffleur') a = { champ: a.champ, club: a.club, init: 1, pendu: a.pendu };
+      return a;
+    }
     return aides(t);
   }
-  // Pendu progressif : moitié du nom au seuil, puis une lettre de plus par
-  // essai raté — aucun tour n'est jamais un mur.
+  // Pendu progressif : un TIERS du nom au seuil (v16 — la moitié d'avant
+  // « appelait » le nom et rendait la victoire creuse), puis une lettre de plus
+  // par essai raté — la convergence reste garantie, aucun tour n'est un mur,
+  // mais le budget s'épuise en général avant l'épellation complète.
   function pendu(nom, extra) {
     var mots = nom.split(' ');
-    var vus = mots.map(function (w) { return Math.ceil(w.length / 2); });
+    var vus = mots.map(function (w) { return Math.max(1, Math.ceil(w.length / 3)); });
     var e = extra || 0;
     while (e > 0) {
       var i = -1;
@@ -1438,7 +1599,19 @@
   }
   el['joker-draft'].addEventListener('click', function (e) {
     var b = e.target.closest('.joker-card');
-    if (!b || !run || run.joker) return;
+    if (!b) return;
+    if (MODE === 'coupe') { // draft de Coupe : même planche de cartes, autre destin
+      if (!coupe || coupe.done || coupe.joker) return;
+      coupe.joker = b.dataset.j;
+      delete coupe.draft;
+      saveCoupe();
+      el['joker-draft'].hidden = true;
+      el['guess-zone'].style.display = 'block';
+      renderCoupeBar(); renderBoard(); renderStartHint(); renderHint();
+      el['guess-input'].focus();
+      return;
+    }
+    if (!run || run.joker) return;
     run.joker = b.dataset.j;
     delete run.draft;
     run.lifeUsed = false;
@@ -1531,6 +1704,7 @@
     el['end-note'].hidden = true;
     el['end-album'].hidden = true;
     el['pack-zone'].hidden = true;
+    el['end-succes'].hidden = true;
 
     if (MODE === 'jour') {
       el['end-verdict'].textContent = jour.won ? 'Trouvé en ' + jour.g.length + '/' + MAX_TRIES + ' !' : 'Raté… c’était :';
@@ -1560,6 +1734,7 @@
         ? '🏆 Palmarès : ' + coupeStats.trophees + ' trophée' + (coupeStats.trophees > 1 ? 's' : '')
         : 'Le trophée se mérite — retente ta chance !';
       renderPackZone();
+      renderEndSucces();
       el['end-album'].textContent = '📔 Ouvrir mon album (' + albumCount() + '/' + ALBUM_IDX.length + ')';
       el['end-album'].hidden = false;
       el['btn-again'].hidden = false;
@@ -1762,6 +1937,7 @@
   function submitGuess(p) {
     if (isDone() || !p || el['round-banner'].hidden === false) return;
     if (MODE === 'duel' && !duel) return;
+    if (MODE === 'coupe' && coupeDraftPending()) return; // le joker d'abord
     var done = guesses().map(norm);
     if (done.indexOf(norm(p[0])) !== -1) { el.notice.textContent = 'Déjà essayé !'; return; }
     el.notice.textContent = '';
@@ -1948,6 +2124,7 @@
     renderStartHint();
     renderHint();
     if (m === 'marathon') renderDraft(); // le draft, s'il est dû, recouvre la zone de jeu
+    if (m === 'coupe') renderCoupeDraft(); // idem pour le draft de Coupe (reprise après reload)
   }
   el['tab-jour'].addEventListener('click', function () { setMode('jour'); });
   el['tab-coupe'].addEventListener('click', function () { setMode('coupe'); });

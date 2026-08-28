@@ -136,9 +136,9 @@
   /* ── Finitions d'ensemble : la sélection est dorée, les ascenseurs sont au thème ── */
   ::selection { background: var(--gold); color: #211e19; }
   body { -webkit-tap-highlight-color: transparent; }
-  #album-panel::-webkit-scrollbar, #suggestions::-webkit-scrollbar { width: 9px; }
-  #album-panel::-webkit-scrollbar-track, #suggestions::-webkit-scrollbar-track { background: var(--page); }
-  #album-panel::-webkit-scrollbar-thumb, #suggestions::-webkit-scrollbar-thumb {
+  #album-panel::-webkit-scrollbar, #suggestions::-webkit-scrollbar, #succes-panel::-webkit-scrollbar { width: 9px; }
+  #album-panel::-webkit-scrollbar-track, #suggestions::-webkit-scrollbar-track, #succes-panel::-webkit-scrollbar-track { background: var(--page); }
+  #album-panel::-webkit-scrollbar-thumb, #suggestions::-webkit-scrollbar-thumb, #succes-panel::-webkit-scrollbar-thumb {
     background: var(--gold-deep); border-radius: 5px; border: 2px solid var(--page);
   }
 
@@ -184,8 +184,9 @@
     position: relative;
     filter: drop-shadow(2.5px 2.5px 0 rgba(33,30,25,.42)) drop-shadow(0 0 14px rgba(255,214,120,.3));
   }
-  /* Titre en feuille d'or : dégradé métallique dans les lettres (l'émoji ⚽ reste hors du clip) */
-  header.sticker h1 .foil-txt {
+  /* Texte en feuille d'or : dégradé métallique dans les lettres (les émojis restent hors du clip).
+     Teinte claire par défaut (fonds foncés) ; .ci-title la redéfinit en or profond pour la page crème. */
+  .foil-txt {
     background: linear-gradient(177deg, #fffdf4 10%, #fbeec2 36%, #eccf78 50%, #fffbe8 64%, #dcb648 88%);
     -webkit-background-clip: text; background-clip: text;
     color: transparent; -webkit-text-fill-color: transparent;
@@ -223,8 +224,16 @@
   .mode-tab:active { transform: translate(1px,2px); box-shadow: none; }
   @media (hover: hover) {
     .mode-tab:hover:not([aria-selected="true"]) { transform: translateY(-1.5px); box-shadow: 2px 4.5px 0 rgba(33,30,25,.28); }
-    #btn-guess:hover, #endcard button:hover, #duel-intro button:hover,
-    #duel-share .ds-btns button:hover, #duel-share .ds-btns a:hover { filter: brightness(1.08); }
+    #btn-guess:hover, #endcard button:hover, #duel-intro button:hover, #btn-pack:hover,
+    #coupe-intro .di-btns button:hover, .pseudo-card button:not(.btn-ghost):hover,
+    #duel-share .ds-btns button:hover, #duel-share .ds-btns a:hover {
+      filter: brightness(1.07); transform: translateY(-2px);
+    }
+    #btn-guess:active, #endcard button:active, #duel-intro button:active, #btn-pack:active,
+    #coupe-intro .di-btns button:active, .pseudo-card button:not(.btn-ghost):active,
+    #duel-share .ds-btns button:active, #duel-share .ds-btns a:active {
+      filter: none; transform: translateY(4px);
+    }
   }
   .mode-tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
@@ -379,29 +388,32 @@
   #guess-input {
     flex: 1; min-width: 0;
     font-family: var(--font-cond); font-size: 19px; font-weight: 600;
-    padding: 12px 14px;
-    border: 2.5px solid var(--line); border-radius: 5px;
+    padding: 13px 15px;
+    border: 2.5px solid var(--line); border-radius: 12px;
     background: var(--sticker-border); color: var(--text);
     box-shadow: inset 1.5px 2px 0 rgba(33,30,25,.07);
     transition: box-shadow .15s;
   }
   #guess-input:focus { outline: 3px solid var(--gold); outline-offset: 1px; }
+  /* ── Système de boutons v16 : socle 3D épais, enfoncement réel au clic —
+     le langage « gros bouton d'arcade » qui manquait à la v15 ── */
   #btn-guess {
-    font-family: var(--font-display); font-size: 15px; letter-spacing: .03em;
+    font-family: var(--font-display); font-size: 16px; letter-spacing: .03em;
     color: var(--on-dark);
-    background: linear-gradient(175deg, #348750, var(--green) 45%, var(--green-deep));
-    border: 2.5px solid var(--green-deep); border-radius: 5px;
-    padding: 0 18px; cursor: pointer;
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), 2px 3px 0 rgba(33,30,25,.25);
+    background: linear-gradient(175deg, #3d955a, var(--green) 45%, var(--green-deep));
+    border: 2.5px solid var(--green-deep); border-radius: 12px;
+    padding: 0 20px; cursor: pointer;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.28), 0 5px 0 #143d22, 0 7px 10px rgba(33,30,25,.22);
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
+    transition: transform .07s, box-shadow .07s;
   }
-  #btn-guess:active { transform: translate(1px,2px); box-shadow: none; }
+  #btn-guess:active { transform: translateY(4px); box-shadow: inset 0 2px 0 rgba(255,255,255,.28), 0 1px 0 #143d22; }
   #btn-guess:focus-visible { outline: 3px solid var(--gold); }
   #suggestions {
     position: absolute; left: 0; right: 0; top: calc(100% + 5px); z-index: 10;
     background: var(--sticker-border);
-    border: 2.5px solid var(--line); border-radius: 5px;
-    box-shadow: 4px 5px 0 rgba(33,30,25,.28);
+    border: 2.5px solid var(--line); border-radius: 10px;
+    box-shadow: 0 6px 0 rgba(33,30,25,.3), 0 10px 22px rgba(33,30,25,.22);
     max-height: 246px; overflow-y: auto;
   }
   #suggestions[hidden] { display: none; }
@@ -520,7 +532,7 @@
     border: 3px solid var(--sticker-border);
     outline: 1px solid rgba(33,30,25,.22);
     box-shadow: inset 0 1.5px 0 var(--cell-gloss), var(--shadow-cell);
-    border-radius: 2px;
+    border-radius: 6px;
     min-height: 52px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 4px 2px; gap: 1px;
@@ -585,15 +597,17 @@
 
   /* ── Transition marathon (bravo, joueur suivant) ── */
   #round-banner {
-    margin: 12px 2px 0; padding: 12px;
+    margin: 12px 2px 0; padding: 17px 14px;
     background: repeating-linear-gradient(90deg, var(--grass-a) 0 12px, var(--grass-b) 12px 24px);
     color: #fdfaf2;
     border: 3px solid var(--sticker-border); outline: 1px solid rgba(33,30,25,.25);
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 2px 3px 0 rgba(33,30,25,.2);
-    border-radius: 4px; text-align: center;
-    font-family: var(--font-cond); font-weight: 700; font-size: 17px;
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 26px rgba(44,122,68,.45), 0 5px 0 rgba(33,30,25,.22);
+    border-radius: 10px; text-align: center;
+    font-family: var(--font-cond); font-weight: 700; font-size: 18px;
     text-shadow: 1px 1px 0 rgba(33,30,25,.32);
+    animation: banner-in .45s cubic-bezier(.2, 1.5, .4, 1);
   }
+  @keyframes banner-in { from { transform: scale(.72); opacity: 0; } }
   #round-banner[hidden] { display: none; }
 
   /* ── Fin de partie : la carte collector au bord foil animé ── */
@@ -658,17 +672,23 @@
   #endcard .streak { font-family: var(--font-cond); font-weight: 700; font-size: 15px; margin-bottom: 12px; }
   #endcard .social { font-size: 13px; font-weight: 600; color: var(--green-deep); margin-bottom: 12px; min-height: 1em; }
   #endcard .btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  #endcard button {
-    font-family: var(--font-display); font-size: 15px;
+  /* ⚠️ .btns seulement : #btn-pack (sachet doré) et #end-album (carnet discret)
+     sont aussi des <button> de l'endcard et gardent leur propre identité */
+  #endcard .btns button {
+    font-family: var(--font-display); font-size: 16px;
     color: var(--on-dark);
-    background: linear-gradient(175deg, #d8453a, var(--red) 45%, var(--red-deep));
-    border: 2.5px solid var(--red-deep); border-radius: 5px;
-    padding: 10px 22px; cursor: pointer;
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.16), 2px 3px 0 rgba(33,30,25,.25);
+    background: linear-gradient(175deg, #e04d41, var(--red) 45%, var(--red-deep));
+    border: 2.5px solid var(--red-deep); border-radius: 12px;
+    padding: 12px 24px; cursor: pointer;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.24), 0 5px 0 #6d1510, 0 7px 10px rgba(33,30,25,.22);
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
+    transition: transform .07s, box-shadow .07s;
   }
-  #endcard button.green { background: linear-gradient(175deg, #348750, var(--green) 45%, var(--green-deep)); border-color: var(--green-deep); }
-  #endcard button:active { transform: translate(1px,2px); box-shadow: none; }
+  #endcard .btns button.green {
+    background: linear-gradient(175deg, #3d955a, var(--green) 45%, var(--green-deep)); border-color: var(--green-deep);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.24), 0 5px 0 #143d22, 0 7px 10px rgba(33,30,25,.22);
+  }
+  #endcard .btns button:active { transform: translateY(4px); box-shadow: inset 0 2px 0 rgba(255,255,255,.24), 0 1px 0 rgba(33,30,25,.4); }
   #endcard button:focus-visible { outline: 3px solid var(--gold-deep); }
   #copy-feedback { font-size: 13px; font-weight: 700; color: var(--green-deep); min-height: 1.2em; margin-top: 8px; }
   #countdown { font-family: var(--font-cond); font-weight: 600; font-size: 14px; margin-top: 10px; opacity: .75; font-variant-numeric: tabular-nums; }
@@ -725,13 +745,14 @@
   #duel-intro button {
     font-family: var(--font-display); font-size: 15px;
     color: var(--on-dark);
-    background: linear-gradient(175deg, #d8453a, var(--red) 45%, var(--red-deep));
-    border: 2.5px solid var(--red-deep); border-radius: 5px;
-    padding: 12px 26px; cursor: pointer;
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.16), 2px 3px 0 rgba(33,30,25,.25);
+    background: linear-gradient(175deg, #e04d41, var(--red) 45%, var(--red-deep));
+    border: 2.5px solid var(--red-deep); border-radius: 12px;
+    padding: 13px 26px; cursor: pointer;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.24), 0 5px 0 #6d1510, 0 7px 10px rgba(33,30,25,.22);
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
+    transition: transform .07s, box-shadow .07s;
   }
-  #duel-intro button:active { transform: translate(1px,2px); box-shadow: none; }
+  #duel-intro button:active { transform: translateY(4px); box-shadow: 0 1px 0 #6d1510; }
   #duel-intro button:focus-visible { outline: 3px solid var(--gold); }
 
   /* ── Classement mondial ── */
@@ -850,15 +871,16 @@
   }
   #salon-couleurs button[aria-checked="true"] { outline: 3px solid var(--gold); outline-offset: 1px; }
   .pseudo-card button {
-    font-family: var(--font-display); font-size: 14px;
+    font-family: var(--font-display); font-size: 15px;
     color: var(--on-dark);
-    background: linear-gradient(175deg, #348750, var(--green) 45%, var(--green-deep));
-    border: 2.5px solid var(--green-deep); border-radius: 5px;
-    padding: 10px 24px; cursor: pointer;
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), 2px 3px 0 rgba(33,30,25,.25);
+    background: linear-gradient(175deg, #3d955a, var(--green) 45%, var(--green-deep));
+    border: 2.5px solid var(--green-deep); border-radius: 12px;
+    padding: 12px 26px; cursor: pointer;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.26), 0 5px 0 #143d22, 0 7px 10px rgba(33,30,25,.22);
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
+    transition: transform .07s, box-shadow .07s;
   }
-  .pseudo-card button:active { transform: translate(1px,2px); box-shadow: none; }
+  .pseudo-card button:active { transform: translateY(4px); box-shadow: inset 0 2px 0 rgba(255,255,255,.26), 0 1px 0 #143d22; }
 
   /* ── Intro des nouveaux joueurs : une mini-partie qui se joue toute seule.
      Animations 100 % CSS (fill backwards) : l'état final est dans le DOM,
@@ -939,14 +961,15 @@
   #duel-share .ds-btns button, #duel-share .ds-btns a {
     font-family: var(--font-display); font-size: 13px;
     color: var(--on-dark);
-    background: linear-gradient(175deg, #348750, var(--green) 45%, var(--green-deep));
-    border: 2.5px solid var(--green-deep); border-radius: 5px;
-    padding: 9px 14px; cursor: pointer;
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), 2px 3px 0 rgba(33,30,25,.25);
+    background: linear-gradient(175deg, #3d955a, var(--green) 45%, var(--green-deep));
+    border: 2.5px solid var(--green-deep); border-radius: 10px;
+    padding: 10px 15px; cursor: pointer;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.24), 0 4px 0 #143d22;
     text-decoration: none; display: inline-flex; align-items: center;
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
+    transition: transform .07s, box-shadow .07s;
   }
-  #duel-share .ds-btns button:active, #duel-share .ds-btns a:active { transform: translate(1px,2px); box-shadow: none; }
+  #duel-share .ds-btns button:active, #duel-share .ds-btns a:active { transform: translateY(3px); box-shadow: 0 1px 0 #143d22; }
   #duel-share .ds-btns [hidden] { display: none; }
 
   /* ── Confettis de victoire ── */
@@ -965,7 +988,8 @@
     header.sticker::after, #chrono.low, .guess-line.reveal .cell,
     #endcard, #endcard::before, #end-visual::before, .note-chip, .confetti,
     #btn-coupe-new::after, #btn-pack, .pack-carte, .pack-carte::after,
-    .cr-step.cur, .band-chip.band-legende {
+    .cr-step.cur, .band-chip.band-legende,
+    .ci-hero::before, .ci-trophy, #round-banner, .suc-toast {
       animation: none !important;
     }
     .confetti { display: none; }
@@ -1026,15 +1050,20 @@
   }
   #coupe-palmares { font-family: var(--font-cond); font-weight: 600; font-size: 14.5px; }
   #coupe-palmares b { font-family: var(--font-display); font-weight: 400; color: var(--gold-deep); }
+  #coupe-intro .di-btns { width: 100%; }
   #coupe-intro .di-btns button {
-    font-family: var(--font-display); font-size: 15px; border-radius: 5px;
+    font-family: var(--font-display); font-size: 15px; border-radius: 12px;
     padding: 12px 22px; cursor: pointer;
+    transition: transform .07s, box-shadow .07s;
   }
   #btn-coupe-new {
+    flex: 1 1 100%;
+    font-size: 19px !important; letter-spacing: .04em;
+    padding: 17px 22px !important;
     color: var(--on-dark);
-    background: linear-gradient(175deg, #dab440, var(--gold) 45%, var(--gold-deep));
+    background: linear-gradient(175deg, #e6c14c, var(--gold) 45%, var(--gold-deep));
     border: 2.5px solid var(--gold-deep);
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 16px rgba(201,162,39,.35), 2px 3px 0 rgba(33,30,25,.25);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.32), 0 6px 0 #6f5610, 0 8px 20px rgba(201,162,39,.45);
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
     position: relative; overflow: hidden;
   }
@@ -1047,18 +1076,61 @@
     animation: sheen 3.4s ease-in-out infinite;
     pointer-events: none;
   }
-  #btn-album {
+  #btn-album, #btn-succes {
+    flex: 1 1 40%;
+    padding: 12px 8px !important;
     color: var(--text); background: var(--paper);
-    border: 2.5px solid var(--line); font-size: 13.5px;
-    box-shadow: 2px 3px 0 rgba(33,30,25,.2);
+    border: 2.5px solid var(--line); font-size: 13px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.5), 0 4px 0 rgba(33,30,25,.55), 0 6px 8px rgba(33,30,25,.16);
   }
-  #coupe-intro .di-btns button:active { transform: translate(1px,2px); box-shadow: none; }
+  #coupe-intro .di-btns button:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(33,30,25,.4); }
   #coupe-intro .di-btns button:focus-visible { outline: 3px solid var(--gold); }
+  /* ── L'affiche de la Coupe : trophée rayonnant + titre en feuille d'or ── */
+  .ci-hero {
+    position: relative; width: 150px; height: 104px;
+    display: flex; align-items: center; justify-content: center;
+    margin: -4px auto -8px;
+  }
+  .ci-hero::before {
+    content: ''; position: absolute; inset: -46px;
+    background: repeating-conic-gradient(rgba(201,162,39,.3) 0 9deg, transparent 9deg 20deg);
+    border-radius: 50%;
+    -webkit-mask: radial-gradient(closest-side, #000 22%, transparent 72%);
+    mask: radial-gradient(closest-side, #000 22%, transparent 72%);
+    animation: sunburst 40s linear infinite;
+    pointer-events: none;
+  }
+  .ci-trophy {
+    position: relative; font-size: 72px; line-height: 1;
+    filter: drop-shadow(0 6px 0 rgba(33,30,25,.18)) drop-shadow(0 0 24px rgba(201,162,39,.55));
+    animation: trophy-bob 3.4s ease-in-out infinite;
+  }
+  @keyframes trophy-bob { 50% { transform: translateY(-6px) rotate(-2.5deg); } }
+  .ci-title {
+    font-family: var(--font-display); font-size: clamp(30px, 8vw, 40px);
+    line-height: 1; letter-spacing: .03em;
+    filter: drop-shadow(0 2.5px 0 rgba(33,30,25,.25));
+  }
+  /* ⚠️ background-image, PAS le raccourci background : il réinitialiserait background-clip:text */
+  .ci-title .foil-txt {
+    background-image: linear-gradient(177deg, #a8821a 8%, #e0bd4a 32%, #8a6d15 50%, #d3ab2e 70%, #7c6212 92%);
+  }
+  /* La note du parcours en MÉDAILLON d'or : le trophée chiffré de la run */
   #end-note {
     font-family: var(--font-cond); font-weight: 700;
     letter-spacing: .08em; text-transform: uppercase; font-size: 13px;
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    margin-bottom: 12px;
   }
-  #end-note b { font-family: var(--font-display); font-weight: 400; font-size: 30px; color: var(--gold-deep); }
+  #end-note b {
+    font-family: var(--font-display); font-weight: 400; font-size: 30px; color: #211e19;
+    width: 78px; height: 78px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 32% 26%, #f9edbe, var(--gold) 58%, var(--gold-deep));
+    border: 3px solid var(--gold-deep);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.5), 0 4px 0 rgba(33,30,25,.25), 0 0 20px rgba(201,162,39,.45);
+    text-shadow: none;
+  }
   #end-note[hidden] { display: none; }
   #end-album {
     cursor: pointer; background: var(--paper); color: var(--text);
@@ -1069,14 +1141,44 @@
   #end-album[hidden] { display: none; }
 
   /* ── 📔 L'ALBUM DES STARS : les vignettes Panini ── */
-  #album-panel {
+  #album-panel, #succes-panel {
     position: fixed; inset: 0; z-index: 60; overflow-y: auto;
     background: var(--page);
     background-image: radial-gradient(var(--page-dot) 1px, transparent 1.5px);
     background-size: 14px 14px;
     padding: 0 12px 40px;
   }
-  #album-panel[hidden] { display: none; }
+  #album-panel[hidden], #succes-panel[hidden] { display: none; }
+  /* ── 🏅 Salle des trophées ── */
+  #succes-grid { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .suc-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--paper); border: 2px solid var(--line); border-radius: 10px;
+    padding: 10px 14px; box-shadow: var(--shadow-cell);
+  }
+  .suc-item .si { font-size: 27px; line-height: 1; filter: grayscale(1); opacity: .4; }
+  .suc-item.ok .si { filter: none; opacity: 1; }
+  .suc-item .st { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .suc-item .st b { font-family: var(--font-cond); font-size: 16px; letter-spacing: .03em; }
+  .suc-item .st small { font-size: 12.5px; opacity: .7; }
+  .suc-item .sd { font-family: var(--font-cond); font-weight: 700; font-size: 12px; color: var(--green-deep); white-space: nowrap; }
+  .suc-item:not(.ok) .sd { color: var(--text); opacity: .45; }
+  .suc-item.ok {
+    border-color: var(--gold-deep);
+    background: linear-gradient(170deg, var(--card), var(--gold-pale));
+    box-shadow: inset 0 0 0 1.5px rgba(201,162,39,.35), var(--shadow-cell);
+  }
+  /* Toasts « succès débloqué » sur la carte de fin */
+  #end-succes { display: flex; flex-direction: column; gap: 6px; align-items: center; margin-bottom: 12px; }
+  #end-succes[hidden] { display: none; }
+  .suc-toast {
+    background: var(--gold-pale); color: var(--text);
+    border: 2px solid var(--gold-deep); border-radius: 999px;
+    padding: 6px 15px;
+    font-family: var(--font-cond); font-weight: 600; font-size: 14px;
+    box-shadow: 0 3px 0 rgba(138,109,21,.4), 0 0 14px rgba(201,162,39,.3);
+    animation: chip-in .3s ease both;
+  }
   .alb-head {
     position: sticky; top: 0; z-index: 2;
     display: flex; align-items: center; gap: 10px;
@@ -1181,12 +1283,14 @@
       linear-gradient(175deg, #dab440, var(--gold) 45%, var(--gold-deep));
     border: 3px solid var(--gold-deep);
     border-top-style: dashed; border-bottom-style: dashed;
-    border-radius: 6px;
-    padding: 16px 32px; cursor: pointer;
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 14px rgba(201,162,39,.4), 2px 3px 0 rgba(33,30,25,.25);
+    border-radius: 10px;
+    padding: 17px 34px; cursor: pointer;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.28), 0 0 14px rgba(201,162,39,.4), 0 5px 0 #6f5610;
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
     animation: packpulse 1.8s ease-in-out infinite;
+    transition: transform .07s, box-shadow .07s;
   }
+  #btn-pack:active { transform: translateY(4px); box-shadow: inset 0 2px 0 rgba(255,255,255,.28), 0 1px 0 #6f5610; }
   #btn-pack:disabled { cursor: default; }
   @keyframes packpulse { 50% { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 24px rgba(201,162,39,.65), 2px 3px 0 rgba(33,30,25,.25); } }
   #btn-pack.shake { animation: packshake .14s linear infinite; }
@@ -1296,9 +1400,15 @@
     révèle en <strong>3 cartes — tu en gardes une</strong> ; plus tu es allé loin, meilleures sont les chances d'or ou
     de légende (💎 : 1 % en pack 16es, 25 % en pack champion — et dans une bande, chaque point de cote rend la carte
     ~1,7× plus rare : un 91 se mérite). Après 3 packs argent d'affilée, l'or est garanti.</p>
-    <p>🎓 <strong>Les indices s'adaptent au tour</strong> : plus on avance, plus le jeu aide (championnat, club,
-    initiales, puis le nom qui se dévoile lettre par lettre après chaque essai raté) — sauf en finale, où la légende
-    se joue presque sans filet. Aucun mystère n'est un mur : avec assez d'essais, on finit toujours par le trouver.</p>
+    <p>🎓 <strong>Les indices récompensent la déduction</strong> : le <strong>contexte arrive vite</strong>
+    (championnat dès le 1er essai raté, club peu après) pour qu'on puisse raisonner en vrai connaisseur — et
+    le nom arrive tard (initiales au 4e raté, puis un tiers du nom qui se complète lettre par lettre). En
+    finale, la légende se joue presque sans filet. Aucun mystère n'est un mur : avec assez d'essais, on finit
+    toujours par le trouver. 🃏 Et au départ de chaque tournoi, tu <strong>choisis un joker</strong> (1 parmi 3)
+    qui t'accompagne toute la run : réserve d'essais, championnat révélé, âge exact, poste exact ou initiales
+    précoces.</p>
+    <p>🏅 <strong>Les succès</strong> : 17 trophées gravés pour de bon dans ta salle des trophées — atteindre la
+    demi, devenir champion, l'invincible (5 essais, zéro raté), remplir l'album… De quoi voir loin entre les runs.</p>
     <p>🔎 <strong>L'enquête</strong> (sous les pastilles d'essais) fait la déduction à ta place : elle accumule tout ce que
     tes essais ont <em>prouvé</em> — nation ou confédération, championnat, club, postes éliminés, et la fourchette d'âge
     calculée d'après les flèches. Un coup d'œil suffit, plus besoin de relire toute la grille.</p>
@@ -1336,8 +1446,11 @@
   </div>
 
   <div id="coupe-intro" hidden>
-    <p>🏆 <strong>La Coupe</strong> : 5 joueurs mystères à deviner d'affilée — des 16es à la finale —
-    avec un budget de <strong>20 essais pour tout le tournoi</strong>. Les indices s'adaptent à chaque tour,
+    <div class="ci-hero" aria-hidden="true"><span class="ci-trophy">🏆</span></div>
+    <div class="ci-title"><span class="foil-txt">LA COUPE</span></div>
+    <p><strong>5 joueurs mystères</strong> à deviner d'affilée — des 16es à la finale —
+    avec un budget de <strong>20 essais pour tout le tournoi</strong>. Au départ, tu choisis
+    <strong>🃏 un joker</strong> qui t'accompagne toute la run. Les indices s'adaptent à chaque tour,
     chaque essai économisé compte… et en finale t'attend un <strong>💎 boss légendaire</strong> que tout
     le monde connaît.</p>
     <p>📔 Chaque mystère deviné <strong>colle sa vignette dans l'album</strong>. Et au bout, quoi qu'il
@@ -1349,6 +1462,7 @@
     <div class="di-btns">
       <button id="btn-coupe-new" type="button">🏆 LANCER LA COUPE</button>
       <button id="btn-album" type="button">📔 MON ALBUM</button>
+      <button id="btn-succes" type="button">🏅 SUCCÈS</button>
     </div>
     <p style="font-size:12px;opacity:.65">L'album : 486 cartes, du joueur confirmé à la légende —
     chaque carte est quelqu'un.</p>
@@ -1402,6 +1516,7 @@
     <div class="desc" id="end-desc"></div>
     <div id="end-note" hidden></div>
     <div class="streak" id="end-streak"></div>
+    <div id="end-succes" hidden></div>
     <div class="social" id="end-social"></div>
     <div id="pack-zone" hidden>
       <button id="btn-pack" type="button">📦 OUVRIR TON PACK</button>
@@ -1508,6 +1623,17 @@
     <div id="album-grid"></div>
   </div>
 
+  <div id="succes-panel" hidden>
+    <div class="alb-head">
+      <button id="btn-succes-close" type="button" aria-label="Fermer les succès">✕</button>
+      <h3>🏅 SALLE DES TROPHÉES</h3>
+      <div id="succes-count">0/0</div>
+    </div>
+    <p class="alb-note">Chaque succès se grave ici pour de bon — dispute des Coupes, remplis
+    l'album, vise l'invincible. Les 🔒 disent exactement quoi conquérir.</p>
+    <div id="succes-grid"></div>
+  </div>
+
   <div id="salon-dialog" hidden>
     <div class="pseudo-card">
       <h3 id="salon-dlg-titre">🏟️ Nouveau salon</h3>
@@ -1532,9 +1658,9 @@
   </footer>
 </div>
 
-<script src="data.js?v=22"></script>
-<script src="config.js?v=22"></script>
-<script src="app.js?v=22"></script>
+<script src="data.js?v=23"></script>
+<script src="config.js?v=23"></script>
+<script src="app.js?v=23"></script>
 <script>
 /* Tilt holographique des cartes de pack — décoratif pur : l'état du jeu ne dépend
    jamais de ce script. Desktop seulement (hover), coupé si mouvement réduit. */
