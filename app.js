@@ -212,7 +212,10 @@
    'dp-note', 'intro-dialog', 'btn-intro-go', 'btn-intro-rules',
    'intro-pseudo', 'intro-club', 'club-banner', 'club-dialog', 'club-select', 'btn-club-ok',
    'salon-zone', 'salon-boards', 'btn-salon-new', 'salon-dialog', 'salon-dlg-titre', 'salon-nom',
-   'salon-pseudo', 'salon-num', 'salon-couleurs', 'salon-avatar', 'btn-salon-ok', 'btn-salon-annuler'].forEach(function (id) {
+   'salon-pseudo', 'salon-num', 'salon-couleurs', 'salon-avatar', 'btn-salon-ok', 'btn-salon-annuler',
+   'tab-coupe', 'coupe-intro', 'btn-coupe-new', 'coupe-palmares', 'coupe-bar', 'coupe-rounds', 'coupe-budget',
+   'btn-coupe-abandon', 'btn-album', 'album-panel', 'album-grid', 'album-count', 'btn-album-close', 'alb-toggle',
+   'end-note', 'end-album'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
   el['data-count'].textContent = DATA.length.toLocaleString('fr-BE');
@@ -287,6 +290,8 @@
     return s;
   }
   function maxTriesNow() {
+    // Coupe : 6 essais max par tour, mais jamais plus que le budget restant du tournoi
+    if (MODE === 'coupe') return coupe ? Math.max(1, Math.min(MAX_TRIES, COUPE_BUDGET - coupe.used)) : MAX_TRIES;
     return (MODE === 'marathon' && !ranked() && run && run.joker === 'septieme') ? 7 : MAX_TRIES;
   }
   var lastPracticeLine = '';
@@ -326,6 +331,211 @@
     };
   }
   var incomingDuel = parseDuelHash();
+
+  // ── 🏆 État COUPE : tournoi à élimination directe, budget d'essais partagé ──
+  // La partie a un ARC : on n'y « meurt » pas, on est éliminé à un stade, et toute
+  // run — même perdue — se termine par une note sur 100. C'est ce qui donne envie
+  // de relancer (« j'étais en demi ! »), là où la survie infinie finit toujours mal.
+  var COUPE_BUDGET = 18; // pour les 5 tours : la vraie ressource du mode
+  var COUPE_ROUNDS = [
+    { label: '16es de finale', court: '16ES' },
+    { label: '8es de finale', court: '8ES' },
+    { label: 'quarts de finale', court: 'QUARTS' },
+    { label: 'demi-finale', court: 'DEMI' },
+    { label: 'finale', court: 'FINALE' }
+  ];
+  var COUPE_ELIM_TITRES = [
+    'Sorti d’entrée, en 16es…',
+    'Éliminé en 8es de finale',
+    'Éliminé en quarts de finale',
+    'Si proche… tombé en demi-finale',
+    'Finaliste — battu sur le fil'
+  ];
+  var COUPE_ELIM_PTS = [10, 25, 40, 60, 75];
+  var coupe = loadJSON('jm-coupe', null);
+  var coupeStats = loadJSON('jm-coupe-stats', { runs: 0, trophees: 0, best: 0 });
+  var album = loadJSON('jm-album', {}); // { nom du joueur: date de la 1re capture }
+  var albGroup = load('jm-alb-group', 'champ');
+  // Base regénérée entre deux visites : une cible disparue invaliderait la run
+  if (coupe && (!coupe.targets || coupe.targets.some(function (n) { return !findPlayer(n); }))) coupe = null;
+  function saveCoupe() { save('jm-coupe', JSON.stringify(coupe)); }
+  function coupeTarget() { return findPlayer(coupe.targets[Math.min(coupe.round, 4)]); }
+  function coupeRoundPhrase(i) { return (i >= 3 ? 'la ' : 'les ') + COUPE_ROUNDS[i].label; }
+  function newCoupeRun() {
+    // Les cibles sont stockées par NOM (les index bougent quand la base est
+    // regénérée) : un homonyme (les deux Éderson…) résoudrait vers le mauvais
+    // joueur — on écarte du tirage tout nom qui n'est pas unique dans la base.
+    var sans_homonymes = STAR_IDX.filter(function (i) { return findPlayer(DATA[i][0]) === DATA[i]; });
+    // Biais collection : les stars encore absentes de l'album passent en premier
+    var manq = sans_homonymes.filter(function (i) { return !album[DATA[i][0]]; });
+    var src = manq.length >= 5 ? manq : sans_homonymes;
+    var picks = [];
+    while (picks.length < 5) {
+      var i = src[Math.floor(Math.random() * src.length)];
+      if (picks.indexOf(i) === -1) picks.push(i);
+    }
+    coupe = { targets: picks.map(function (i) { return DATA[i][0]; }), round: 0, used: 0, g: [], done: false, won: false, news: 0 };
+    saveCoupe();
+  }
+  // 📔 Album : toute star trouvée (tous modes) colle sa vignette
+  function collectPlayer(p) {
+    if (!p || album[p[0]]) return false;
+    album[p[0]] = DAY;
+    save('jm-album', JSON.stringify(album));
+    return true;
+  }
+  function albumCount() {
+    var n = 0;
+    STAR_IDX.forEach(function (i) { if (album[DATA[i][0]]) n++; });
+    return n;
+  }
+  function coupeNote() {
+    // Champion : 85 + bonus d'essais économisés (5 essais parfaits → 100).
+    if (coupe.won) return Math.min(100, 85 + Math.round((COUPE_BUDGET - coupe.used) * 15 / 13));
+    return COUPE_ELIM_PTS[coupe.round];
+  }
+  function finalizeCoupe() {
+    coupe.note = coupeNote();
+    coupeStats.runs += 1;
+    if (coupe.won) coupeStats.trophees += 1;
+    coupeStats.best = Math.max(coupeStats.best || 0, coupe.note);
+    save('jm-coupe-stats', JSON.stringify(coupeStats));
+    saveCoupe();
+  }
+  function coupeBanner(msg, ms) {
+    renderCoupeBar();
+    el['round-banner'].textContent = msg;
+    el['round-banner'].hidden = false;
+    el['guess-zone'].style.display = 'none';
+    setTimeout(function () {
+      el['round-banner'].hidden = true;
+      if (MODE === 'coupe' && coupe && !coupe.done) {
+        el['guess-zone'].style.display = 'block';
+        renderBoard(); renderStartHint(); renderHint();
+        el['guess-input'].focus();
+      }
+    }, ms);
+  }
+  function coupeWin() {
+    var t = coupeTarget();
+    if (collectPlayer(t)) coupe.news += 1;
+    coupe.used += coupe.g.length;
+    coupe.g = [];
+    if (coupe.round >= 4) { // 🏆 finale gagnée
+      coupe.done = true; coupe.won = true;
+      finalizeCoupe();
+      renderCoupeBar();
+      confetti(150);
+      showEnd();
+      return;
+    }
+    coupe.round += 1;
+    if (COUPE_BUDGET - coupe.used <= 0) { coupe.sec = true; endCoupe(); return; } // à sec avant le tour suivant
+    saveCoupe();
+    confetti(30);
+    coupeBanner('✅ C’était bien ' + t[0] + ' ! 🎯 ' + (COUPE_BUDGET - coupe.used) +
+      ' essais restants — direction ' + coupeRoundPhrase(coupe.round) + '…', 2200);
+  }
+  function endCoupe() {
+    coupe.done = true; coupe.won = false;
+    finalizeCoupe();
+    renderCoupeBar();
+    showEnd();
+  }
+  function renderCoupeBar() {
+    var active = MODE === 'coupe' && coupe && !coupe.done;
+    el['coupe-bar'].style.display = active ? 'block' : 'none';
+    if (!active) return;
+    el['coupe-rounds'].innerHTML = COUPE_ROUNDS.map(function (r, i) {
+      var cls = i < coupe.round ? ' done' : (i === coupe.round ? ' cur' : '');
+      return '<span class="cr-step' + cls + '">' + (i < coupe.round ? '✓ ' : '') + r.court + '</span>';
+    }).join('<span class="cr-sep">›</span>');
+    var rest = COUPE_BUDGET - coupe.used - coupe.g.length;
+    el['coupe-budget'].innerHTML = '🎯 <b>' + rest + '</b> essai' + (rest > 1 ? 's' : '') + ' pour tout le tournoi';
+  }
+  function renderCoupeIntro() {
+    var visible = MODE === 'coupe' && (!coupe || coupe.done);
+    el['coupe-intro'].hidden = !visible;
+    if (!visible) return;
+    el['btn-album'].textContent = '📔 MON ALBUM · ' + albumCount() + '/' + STAR_IDX.length;
+    el['coupe-palmares'].innerHTML = coupeStats.runs
+      ? '🏆 <b>' + coupeStats.trophees + '</b> trophée' + (coupeStats.trophees > 1 ? 's' : '') +
+        ' · meilleure note <b>' + coupeStats.best + '</b>/100 · ' + coupeStats.runs + ' coupe' + (coupeStats.runs > 1 ? 's' : '') + ' disputée' + (coupeStats.runs > 1 ? 's' : '')
+      : 'Personne au palmarès — sois le premier champion.';
+  }
+  function startCoupeRun() {
+    newCoupeRun();
+    el.endcard.hidden = true;
+    el['guess-zone'].style.display = 'block';
+    renderCoupeIntro(); renderCoupeBar();
+    renderBoard(); renderStartHint(); renderHint();
+    el['guess-input'].focus();
+  }
+  el['btn-coupe-new'].addEventListener('click', startCoupeRun);
+  var coupeAbandonArme = false;
+  el['btn-coupe-abandon'].addEventListener('click', function () {
+    if (MODE !== 'coupe' || !coupe || coupe.done) return;
+    if (!coupeAbandonArme) {
+      coupeAbandonArme = true;
+      el['btn-coupe-abandon'].textContent = 'Sûr ?';
+      setTimeout(function () { coupeAbandonArme = false; el['btn-coupe-abandon'].textContent = 'Abandonner'; }, 2500);
+      return;
+    }
+    coupeAbandonArme = false;
+    el['btn-coupe-abandon'].textContent = 'Abandonner';
+    endCoupe();
+  });
+  // 📔 Album Panini : une section par championnat (ou par pays), les stars
+  // trouvées en vignette maillot, les manquantes en maillot gris « ? ».
+  function stickerHTML(p) {
+    var d = album[p[0]];
+    if (!d) return '<div class="alb-sticker manq">' + jerseySVG(p, true) + '<span class="an">???</span><span class="ac">à trouver</span></div>';
+    return '<div class="alb-sticker">' + (d === DAY ? '<span class="alb-new">NOUVEAU</span>' : '') +
+      jerseySVG(p) + '<span class="an">' + esc(p[0].split(' ').slice(-1)[0]) + '</span><span class="ac">' + esc(p[1]) + '</span></div>';
+  }
+  function renderAlbum() {
+    el['album-count'].textContent = albumCount() + '/' + STAR_IDX.length;
+    Array.prototype.forEach.call(el['alb-toggle'].children, function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.g === albGroup));
+    });
+    var secs = {};
+    STAR_IDX.forEach(function (i) {
+      var p = DATA[i];
+      var k = albGroup === 'pays' ? p[3] : p[2];
+      (secs[k] = secs[k] || []).push(p);
+    });
+    var keys = Object.keys(secs).sort(function (a, b) {
+      return secs[b].length - secs[a].length || a.localeCompare(b, 'fr');
+    });
+    el['album-grid'].innerHTML = keys.map(function (k) {
+      var ps = secs[k].slice().sort(function (a, b) { return (a[1] + a[0]).localeCompare(b[1] + b[0], 'fr'); });
+      var have = ps.filter(function (p) { return album[p[0]]; }).length;
+      var flag = albGroup === 'pays' ? ps[0][4] : (LEAGUE_FLAG[k] || '⚽');
+      return '<section class="alb-sec"><h4>' + flagHTML(flag) + ' ' + esc(k) +
+        ' <span>' + have + '/' + ps.length + '</span></h4><div class="alb-grid">' +
+        ps.map(stickerHTML).join('') + '</div></section>';
+    }).join('');
+  }
+  function openAlbum() {
+    renderAlbum();
+    el['album-panel'].hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAlbum() {
+    el['album-panel'].hidden = true;
+    document.body.style.overflow = '';
+  }
+  el['btn-album'].addEventListener('click', openAlbum);
+  el['end-album'].addEventListener('click', openAlbum);
+  el['btn-album-close'].addEventListener('click', closeAlbum);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !el['album-panel'].hidden) closeAlbum(); });
+  el['alb-toggle'].addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || b.dataset.g === albGroup) return;
+    albGroup = b.dataset.g;
+    save('jm-alb-group', albGroup);
+    renderAlbum();
+  });
 
   if (!storageOK) el['storage-warn'].hidden = false;
 
@@ -678,16 +888,19 @@
   function target() {
     if (MODE === 'jour') return TARGET_JOUR;
     if (MODE === 'duel') return duel ? duel.target : TARGET_JOUR;
+    if (MODE === 'coupe') return coupe ? coupeTarget() : TARGET_JOUR;
     return ranked() ? mdayTarget() : findPlayer(run.target);
   }
   function guesses() {
     if (MODE === 'jour') return jour.g;
     if (MODE === 'duel') return duel ? duel.g : [];
+    if (MODE === 'coupe') return coupe ? coupe.g : [];
     return ranked() ? mday.g : run.g;
   }
   function isDone() {
     if (MODE === 'jour') return jour.done;
     if (MODE === 'duel') return !duel || duel.done;
+    if (MODE === 'coupe') return !coupe || coupe.done;
     return marathonOver;
   }
   function serieActuelle() { return ranked() ? mday.serie : (run ? run.serie : 0); }
@@ -997,6 +1210,9 @@
         c.hidden = false;
         c.textContent = '⏱ ' + fmtSecs((Date.now() - (duel.t0 || Date.now())) / 1000);
       }
+    } else if (MODE === 'coupe') {
+      c.classList.remove('low', 'mara');
+      c.hidden = true; // la Coupe se joue sans chrono : la ressource, c'est le budget d'essais
     } else {
       var st = marathonState();
       var lim = timeLimit();
@@ -1031,6 +1247,8 @@
     el['end-desc'].textContent = POS_LABEL[t[6]] + ' · ' + t[1] + ' (' + t[2] + ') · ' + ageOf(t) + ' ans';
     el.countdown.style.display = 'none';
     el['btn-again'].hidden = true;
+    el['end-note'].hidden = true;
+    el['end-album'].hidden = true;
 
     if (MODE === 'jour') {
       el['end-verdict'].textContent = jour.won ? 'Trouvé en ' + jour.g.length + '/' + MAX_TRIES + ' !' : 'Raté… c’était :';
@@ -1049,6 +1267,22 @@
       el['btn-again'].hidden = false;
       el['btn-again'].textContent = endedRun && endedRun.ranked ? 'ENTRAÎNEMENT LIBRE' : 'REJOUER';
       if (endedRun && endedRun.ranked) startCountdown();
+    } else if (MODE === 'coupe') {
+      if (coupe.won) el['end-verdict'].textContent = '🏆 CHAMPION DE LA COUPE !';
+      else if (coupe.sec) el['end-verdict'].textContent = 'À sec ! Forfait en ' + COUPE_ROUNDS[coupe.round].label + ' — le mystère était :';
+      else el['end-verdict'].textContent = COUPE_ELIM_TITRES[coupe.round] + ' — le mystère était :';
+      el['end-note'].innerHTML = 'Note du parcours <b>' + coupe.note + '</b>/100' +
+        (coupeStats.runs > 1 && coupe.note >= coupeStats.best ? ' · record perso !' : '');
+      el['end-note'].hidden = false;
+      el['end-streak'].textContent = coupeStats.trophees > 0
+        ? '🏆 Palmarès : ' + coupeStats.trophees + ' trophée' + (coupeStats.trophees > 1 ? 's' : '')
+        : 'Le trophée se mérite — retente ta chance !';
+      el['end-album'].textContent = (coupe.news > 0
+        ? '📔 +' + coupe.news + ' carte' + (coupe.news > 1 ? 's' : '') + ' dans ton album — ouvrir'
+        : '📔 Ouvrir mon album') + ' (' + albumCount() + '/' + STAR_IDX.length + ')';
+      el['end-album'].hidden = false;
+      el['btn-again'].hidden = false;
+      el['btn-again'].textContent = 'NOUVELLE COUPE';
     } else { // duel
       var mine = duel.won ? duel.g.length : 0;
       if (duel.challenger) {
@@ -1089,7 +1323,7 @@
     jour.done = true; jour.won = won;
     if (jour.t0) jour.secs = Math.round((Date.now() - jour.t0) / 1000);
     save('jm-' + DAY, JSON.stringify(jour));
-    if (won) confetti(90);
+    if (won) { confetti(90); collectPlayer(TARGET_JOUR); }
     statsJour.played += 1;
     if (won) {
       var consecutive = statsJour.lastWin && daysBetween(statsJour.lastWin, DAY) === 1;
@@ -1179,6 +1413,7 @@
   }
   function marathonWin() {
     var t = target();
+    collectPlayer(t); // les stars trouvées au marathon collent aussi leur vignette
     if (ranked()) { mday.serie += 1; mday.g = []; }
     else { run.serie += 1; run.target = pickPracticeTarget()[0]; run.g = []; }
     saveMarathonState();
@@ -1209,7 +1444,7 @@
     duel.done = true; duel.won = won;
     if (duel.secs == null && duel.t0) duel.secs = Math.round((Date.now() - duel.t0) / 1000);
     saveDuel();
-    if (won) confetti(90);
+    if (won) { confetti(90); collectPlayer(duel.target); }
     showEnd();
   }
   function duelLink() {
@@ -1256,11 +1491,13 @@
     guesses().push(p[0]);
     if (MODE === 'jour') save('jm-' + DAY, JSON.stringify(jour));
     else if (MODE === 'duel') saveDuel();
+    else if (MODE === 'coupe') saveCoupe();
     else if (ranked()) save('jm-mday-' + DAY, JSON.stringify(mday));
     else save('jm-run', JSON.stringify(run));
 
     renderGuess(p, t, true);
     renderTries();
+    if (MODE === 'coupe') renderCoupeBar(); // le budget du tournoi vient de baisser
 
     var win = p[0] === t[0];
     var out = guesses().length >= maxTriesNow() && !win;
@@ -1269,6 +1506,8 @@
         if (win) finishJour(true); else if (out) finishJour(false); else renderHint();
       } else if (MODE === 'duel') {
         if (win) finishDuel(true); else if (out) finishDuel(false); else renderHint();
+      } else if (MODE === 'coupe') {
+        if (win) coupeWin(); else if (out) endCoupe(); else renderHint();
       } else {
         if (win) marathonWin(); else if (out) endMarathon(); else renderHint();
       }
@@ -1289,6 +1528,11 @@
     }
     if (MODE === 'duel') {
       return '⚔️ Je te défie sur un Joueur Mystère ! À toi : ' + duelLink();
+    }
+    if (MODE === 'coupe' && coupe && coupe.done) {
+      return '⚽ Joueur Mystère — La Coupe 🏆\n' +
+        (coupe.won ? 'CHAMPION ! Note ' + coupe.note + '/100' : COUPE_ELIM_TITRES[coupe.round] + ' · note ' + coupe.note + '/100') +
+        '\nFais mieux : ' + SITE;
     }
     var s = endedRun ? endedRun.serie : serieActuelle();
     var lbl = endedRun && endedRun.ranked ? 'Marathon du jour n°' + PUZZLE_NUM : 'Marathon (entraînement)';
@@ -1371,9 +1615,11 @@
   // ── Changement de mode ──
   function setMode(m) {
     MODE = m;
-    ['jour', 'marathon', 'duel'].forEach(function (x) {
+    ['jour', 'coupe', 'marathon', 'duel'].forEach(function (x) {
       el['tab-' + x].setAttribute('aria-selected', x === m);
     });
+    renderCoupeBar();
+    renderCoupeIntro();
     el['marathon-bar'].style.display = m === 'marathon' ? 'flex' : 'none';
     if (m !== 'marathon') el['diff-picker'].hidden = true;
     el.stats.style.display = m === 'jour' ? 'flex' : 'none';
@@ -1405,6 +1651,17 @@
       el.notes.hidden = true;
       return;
     }
+    if (m === 'coupe' && (!coupe || coupe.done)) {
+      // Pas de run en cours : l'affiche de la Coupe (palmarès + album) tient la scène
+      el['guess-zone'].style.display = 'none';
+      el.endcard.hidden = true;
+      clearBoard();
+      el.tries.innerHTML = '';
+      el['start-hint'].style.display = 'none';
+      el.hint.hidden = true;
+      el.notes.hidden = true;
+      return;
+    }
     if (isDone()) showEnd(); else hideEnd();
     renderBoard();
     renderStartHint();
@@ -1412,6 +1669,7 @@
     if (m === 'marathon') renderDraft(); // le draft, s'il est dû, recouvre la zone de jeu
   }
   el['tab-jour'].addEventListener('click', function () { setMode('jour'); });
+  el['tab-coupe'].addEventListener('click', function () { setMode('coupe'); });
   el['tab-marathon'].addEventListener('click', function () { setMode('marathon'); });
   el['tab-duel'].addEventListener('click', function () { setMode('duel'); });
 
@@ -1419,6 +1677,10 @@
   el['btn-again'].addEventListener('click', function () {
     if (MODE === 'duel') {
       launchDuel(lastDuelExpert);
+      return;
+    }
+    if (MODE === 'coupe') {
+      startCoupeRun();
       return;
     }
     marathonOver = false;
