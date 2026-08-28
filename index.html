@@ -47,16 +47,16 @@
     --paper: #f5f7fa;
     --cell: #dde2ea;
     --wm: transparent;
-    --volt: #1c7d8e;           /* l'accent régie — teal profond sur fond clair */
-    --volt-deep: #135e6c;
-    --on-volt: #f2f8f9;
-    --volt-hud: #7fd0dc;       /* le même accent, version claire pour les slabs sombres */
+    --volt: #1f9d55;           /* l'accent PELOUSE — le vert du terrain, l'identité foot */
+    --volt-deep: #157a3f;
+    --on-volt: #f2faf5;
+    --volt-hud: #52d97e;       /* le même vert, version éclairée pour les slabs sombres */
     --red: #cf3a31;
     --red-deep: #9c2721;
     --green: #1e8a50;
     --green-deep: #136339;
-    --grass-a: #23854f;        /* les cases exactes restent vertes : sémantique du jeu */
-    --grass-b: #2c9a5d;
+    --grass-a: #268f56;        /* la pelouse : cases exactes en gazon rayé (signature foot) */
+    --grass-b: #2fa763;
     --gold: #c79a2a;
     --gold-deep: #8a6d15;
     --gold-pale: #f2e8c8;
@@ -86,16 +86,16 @@
     --card: #111827;
     --paper: #121a2b;
     --cell: #182238;
-    --volt: #7fd0dc;
-    --volt-deep: #47a5b4;
-    --on-volt: #06232a;
-    --volt-hud: #7fd0dc;
+    --volt: #52d97e;
+    --volt-deep: #2b9e51;
+    --on-volt: #06230f;
+    --volt-hud: #52d97e;
     --red: #e05a4f;
     --red-deep: #b03a31;
     --green: #2f9e63;
     --green-deep: #1d7a49;
-    --grass-a: #23854f;
-    --grass-b: #2c9a5d;
+    --grass-a: #268f56;
+    --grass-b: #2fa763;
     --gold: #e5c05e;
     --gold-deep: #b08c2e;
     --gold-pale: #2a2410;
@@ -128,7 +128,7 @@
   }
   html[data-theme="nuit"] body::after {
     background:
-      radial-gradient(120% 50% at 50% -10%, rgba(97,146,255,.07), transparent 60%),
+      radial-gradient(120% 50% at 50% -10%, rgba(82,217,126,.06), transparent 60%),
       radial-gradient(140% 140% at 50% 45%, transparent 48%, rgba(0,0,0,.5) 100%);
   }
 
@@ -269,10 +269,21 @@
     margin-top: 3px;
   }
   @media (hover: hover) {
-    .home-tile:hover { transform: translateY(-2px); border-left-color: var(--volt-hud); box-shadow: var(--shadow-hard), 0 0 14px rgba(127,208,220,.12); }
+    .home-tile:hover { transform: translateY(-2px); border-left-color: var(--volt-hud); box-shadow: var(--shadow-hard), 0 0 14px rgba(82,217,126,.12); }
   }
   .home-tile:active { transform: translateY(2px); }
   .home-tile:focus-visible { outline: 3px solid var(--volt-hud); outline-offset: 2px; }
+  /* Chaque mode a sa couleur : l'or du trophée, l'éclair du défi — l'accueil est joyeux */
+  #home-coupe { border-left-color: var(--gold); }
+  #home-coupe .ht-note { color: var(--gold); }
+  @media (hover: hover) {
+    #home-coupe:hover { border-left-color: var(--gold); box-shadow: var(--shadow-hard), 0 0 14px rgba(229,192,94,.16); }
+  }
+  #home-defi { border-left-color: #ffd23f; }
+  #home-defi .ht-note { color: #ffd23f; }
+  @media (hover: hover) {
+    #home-defi:hover { border-left-color: #ffd23f; box-shadow: var(--shadow-hard), 0 0 14px rgba(255,210,63,.16); }
+  }
   #home-collec { display: flex; gap: 10px; margin-top: 10px; }
   #home-collec button {
     flex: 1;
@@ -668,7 +679,8 @@
   .cell .big { font-size: 17px; line-height: 1; }
   .cell .sub { font-size: 11px; font-weight: 500; opacity: .8; }
   .cell.ok {
-    background: var(--grass-a);
+    /* Le gazon rayé : les bandes de tonte d'un terrain — l'exact, c'est la pelouse */
+    background: repeating-linear-gradient(100deg, var(--grass-b) 0 13px, var(--grass-a) 13px 26px);
     color: #fff;
     box-shadow: var(--shadow-cell);
     border-color: var(--green-deep);
@@ -684,7 +696,7 @@
     color: var(--on-dark); font-size: 14px; letter-spacing: .02em;
     border-color: rgba(255,255,255,.08);
   }
-  .cell.name-cell.ok { background: var(--grass-a); }
+  .cell.name-cell.ok { background: repeating-linear-gradient(100deg, var(--grass-b) 0 13px, var(--grass-a) 13px 26px); }
   .cell.duo { flex-direction: row; gap: 3px; padding: 3px; }
   .cell.duo .tag {
     flex: 1; align-self: stretch;
@@ -792,8 +804,8 @@
     transition: transform .07s, filter .07s;
   }
   #endcard .btns button.green {
-    background: linear-gradient(170deg, var(--volt-hud), var(--volt-hud) 55%, color-mix(in srgb, var(--volt-hud) 70%, #06232a) 170%);
-    color: #06232a;
+    background: linear-gradient(170deg, var(--volt-hud), var(--volt-hud) 55%, color-mix(in srgb, var(--volt-hud) 70%, #06230f) 170%);
+    color: #06230f;
     box-shadow: var(--shadow-cell);
   }
   #endcard .btns button:active { transform: translateY(2px); }
@@ -1072,7 +1084,7 @@
   #duel-share .ds-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   #duel-share .ds-btns button, #duel-share .ds-btns a {
     font-family: var(--font-display); font-size: 13px; letter-spacing: .05em; text-transform: uppercase;
-    color: #06232a;
+    color: #06230f;
     background: var(--volt-hud);
     border: none;
     padding: 11px 15px; cursor: pointer;
@@ -1134,12 +1146,12 @@
   .cr-step.done { opacity: .92; border-color: var(--green); color: #9fe2b5; background: rgba(31,164,87,.15); }
   .cr-step.cur {
     opacity: 1; border-color: var(--volt-hud); color: var(--volt-hud);
-    background: rgba(127,208,220,.1); transform: scale(1.05);
+    background: rgba(82,217,126,.1); transform: scale(1.05);
     animation: curpulse 1.6s ease-in-out infinite;
   }
   /* La finale porte le diamant : dernière étape du chemin, toujours signalée */
   .cr-step:last-of-type:not(.done):not(.cur)::after { content: ' 💎'; font-size: 10px; }
-  @keyframes curpulse { 50% { box-shadow: 0 0 10px rgba(127,208,220,.45); } }
+  @keyframes curpulse { 50% { box-shadow: 0 0 10px rgba(82,217,126,.45); } }
   .cr-sep { opacity: .45; color: var(--volt-hud); }
   .cb-row2 {
     display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
@@ -1185,9 +1197,9 @@
     flex: 1 1 100%;
     font-size: 20px !important; letter-spacing: .05em;
     padding: 18px 22px !important;
-    color: #06232a;
-    background: linear-gradient(170deg, #a4e2ec, var(--volt-hud) 45%, #58b2c1 180%);
-    box-shadow: 0 0 18px rgba(127,208,220,.25), var(--shadow-hard);
+    color: #06230f;
+    background: linear-gradient(170deg, #8fe8ab, var(--volt-hud) 45%, #2fa85c 180%);
+    box-shadow: 0 0 18px rgba(82,217,126,.25), var(--shadow-hard);
     position: relative; overflow: hidden;
   }
   #btn-album, #btn-succes {
@@ -1290,7 +1302,7 @@
   #end-succes { display: flex; flex-direction: column; gap: 6px; align-items: center; margin-bottom: 12px; }
   #end-succes[hidden] { display: none; }
   .suc-toast {
-    background: rgba(127,208,220,.1); color: var(--on-dark);
+    background: rgba(82,217,126,.1); color: var(--on-dark);
     border: 1px solid var(--volt-hud);
     padding: 6px 15px;
     font-family: var(--font-cond); font-weight: 600; font-size: 14px;
@@ -1485,6 +1497,23 @@
   .pc-pick:hover .pack-carte, .pc-pick:focus-visible .pack-carte { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--volt-hud), var(--shadow-hard); }
   .pc-pick:focus-visible { outline: none; }
 
+  /* ═══ 📱 FORMAT TABLETTE (640–979px) : toujours une colonne, mais elle
+     respire — la largeur d'un iPad mérite mieux que 520px de téléphone. ═══ */
+  @media (min-width: 640px) and (max-width: 979px) {
+    #app { max-width: 640px; }
+    header.sticker h1 { font-size: 36px; }
+    #guess-input { font-size: 21px; padding: 14px 16px; }
+    #btn-guess { font-size: 18px; padding: 0 28px; }
+    .cell { min-height: 60px; font-size: 14px; }
+    .cell .big { font-size: 18px; }
+    .cell.name-cell { font-size: 15.5px; }
+    .head-row span { font-size: 10px; }
+    .sug { font-size: 18px; }
+    .home-tile b { font-size: 24px; }
+    .home-tile .ht-ico { font-size: 42px; }
+    .alb-head, .alb-toggles, .alb-note, #album-grid, #succes-grid { max-width: 640px; }
+  }
+
   /* ═══ 🖥️ FORMAT ORDINATEUR (≥ 980px) : le jeu à gauche, le panneau
      d'analyse à droite (sticky), et tout le cœur du jeu en plus grand.
      En dessous de 980px, rien ne change : c'est le format mobile. ═══ */
@@ -1575,8 +1604,8 @@
     .cr-step.done { background: none; }
     .cr-step.done::before { border-color: var(--green); background: var(--green); box-shadow: 0 0 8px rgba(31,164,87,.5); }
     .cr-step.done:not(:last-of-type)::after { background: var(--green); opacity: .55; }
-    .cr-step.cur { transform: translateX(4px); background: rgba(127,208,220,.08); }
-    .cr-step.cur::before { border-color: var(--volt-hud); background: var(--volt-hud); box-shadow: 0 0 9px rgba(127,208,220,.6); }
+    .cr-step.cur { transform: translateX(4px); background: rgba(82,217,126,.08); }
+    .cr-step.cur::before { border-color: var(--volt-hud); background: var(--volt-hud); box-shadow: 0 0 9px rgba(82,217,126,.6); }
     .cb-row2 { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(242,245,249,.12); }
     /* Écrans plein jeu : l'album et les succès profitent de la largeur */
     .alb-head, .alb-toggles, .alb-note, #album-grid { max-width: 1000px; }
@@ -1947,9 +1976,9 @@
   </footer>
 </div>
 
-<script src="data.js?v=27"></script>
-<script src="config.js?v=27"></script>
-<script src="app.js?v=27"></script>
+<script src="data.js?v=28"></script>
+<script src="config.js?v=28"></script>
+<script src="app.js?v=28"></script>
 <script>
 /* Le bandeau ticker — décoratif pur, jamais bloquant. */
 (function () {
