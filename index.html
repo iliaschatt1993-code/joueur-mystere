@@ -1073,6 +1073,40 @@
     font-family: var(--font-cond); font-weight: 700; font-size: 8.5px; letter-spacing: .05em;
     padding: 1.5px 4px; border-radius: 3px; border: 1.5px solid var(--gold-deep);
     transform: rotate(6deg);
+    z-index: 1;
+  }
+
+  /* ── 💎 Rareté : cadres de vignettes et pastille de note ── */
+  .alb-cote {
+    position: absolute; top: 2px; left: 4px;
+    font-family: var(--font-display); font-size: 11px; color: var(--gold-deep);
+  }
+  .alb-sticker.r-argent { border-color: #8f9aad; }
+  .alb-sticker.r-or { border-color: var(--gold-deep); box-shadow: 0 0 0 1.5px rgba(201,162,39,.45), var(--shadow-cell); }
+  .alb-sticker.r-legende {
+    border: 2px solid transparent;
+    background-image: linear-gradient(var(--paper), var(--paper)),
+      linear-gradient(120deg, #8a6d15, #c9a227, #f3e6c2, #c9a227, #8a6d15);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 0 8px rgba(201,162,39,.35), var(--shadow-cell);
+  }
+  .alb-sticker.manq.r-legende {
+    background-image: linear-gradient(var(--cell), var(--cell)),
+      linear-gradient(120deg, #8a6d15, #c9a227, #f3e6c2, #c9a227, #8a6d15);
+  }
+  .band-chip {
+    display: inline-block; margin-bottom: 3px;
+    font-family: var(--font-cond); font-weight: 700; font-size: 12px; letter-spacing: .1em;
+    padding: 2px 8px; border-radius: 3px; border: 1.5px solid var(--line);
+    background: var(--cell);
+  }
+  .band-chip.band-argent { border-color: #8f9aad; }
+  .band-chip.band-or { border-color: var(--gold-deep); background: var(--gold-pale); color: var(--gold-deep); }
+  .band-chip.band-legende {
+    color: var(--gold-deep); border-color: var(--gold-deep); background: var(--gold-pale);
+    box-shadow: 0 0 10px rgba(201,162,39,.45);
+    animation: curpulse 1.6s ease-in-out infinite;
   }
 </style>
 </head>
@@ -1102,14 +1136,16 @@
     Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
     <p><strong>☀️ Joueur du jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
     <strong>🏆 La Coupe</strong> : un tournoi à élimination directe — 5 mystères (16es → finale) avec un budget de
-    <strong>18 essais pour tout le parcours</strong>, sans chrono. Éliminé ou champion, chaque coupe se termine par une
-    <strong>note sur 100</strong> ; les trophées s'ajoutent à ton palmarès, et chaque star trouvée (dans n'importe quel mode)
-    colle sa vignette dans ton <strong>📔 album</strong>.
+    <strong>18 essais pour tout le parcours</strong>, sans chrono. Chaque tour <strong>tire une carte au sort</strong> parmi
+    les ~1 350 joueurs cotés de l'album : 🟤 bronze une fois sur deux, ⚪ argent, 🟡 or (rare)… et parfois une
+    💎 <strong>LÉGENDE</strong> (les 49 plus grands, 5 % des tirages). La rareté de la carte en jeu est annoncée dès le
+    départ. Éliminé ou champion, chaque coupe se termine par une <strong>note sur 100</strong> ; les trophées s'ajoutent
+    à ton palmarès, et chaque joueur coté trouvé (dans n'importe quel mode) colle sa vignette dans ton <strong>📔 album</strong>.
     <strong>⏱️ Marathon</strong> : d'abord la tentative <strong>classée</strong> du jour — même séquence de stars pour tout le monde,
     ⏳ 120 s par joueur (le chrono, c'est l'anti-triche du classement), la série grimpe jusqu'au premier raté.
     Ensuite, <strong>entraînement libre</strong> en 4 difficultés : <strong>Facile</strong> (stars, sans chrono),
-    <strong>Moyen</strong> (stars, 120 s — les règles du classé), <strong>Difficile</strong> (toute la base, sans chrono),
-    <strong>Élite</strong> (toute la base, 120 s — la course contre la montre). Records et podiums séparés par difficulté.
+    <strong>Moyen</strong> (stars, 120 s — les règles du classé), <strong>Difficile</strong> (toutes les cartes de l'album, sans chrono),
+    <strong>Élite</strong> (toutes les cartes, 120 s — la course contre la montre). Records et podiums séparés par difficulté.
     En libre, chaque série démarre par un <strong>🃏 draft de joker</strong> : trois cartes tirées au sort, tu en gardes une
     pour toute la run (temps bonus, révélation, 7e essai, seconde chance…) — le classé, lui, se joue sans joker.
     <strong>⚔️ Duel</strong> : génère un lien-défi sur un joueur — stars ou expert (toute la base) —, envoie-le à un pote ;
@@ -1119,10 +1155,10 @@
     <p>🔎 <strong>L'enquête</strong> (sous les pastilles d'essais) fait la déduction à ta place : elle accumule tout ce que
     tes essais ont <em>prouvé</em> — nation ou confédération, championnat, club, postes éliminés, et la fourchette d'âge
     calculée d'après les flèches. Un coup d'œil suffit, plus besoin de relire toute la grille.</p>
-    <p>📇 <strong>La base</strong> : ~4 700 joueurs des grands championnats, tous proposables comme essais pour récolter des
-    indices. Mais le joueur mystère, lui, est <strong>toujours une star mondialement connue</strong> (256 joueurs) — tu
-    n'auras jamais à deviner un remplaçant obscur. La recherche ne répond qu'aux <strong>noms de joueurs</strong> :
-    inutile de taper un club ou un pays pour lister des candidats.</p>
+    <p>📇 <strong>La base</strong> : ~16 000 joueurs de 45 championnats (notes officielles EA FC), tous proposables
+    comme essais pour récolter des indices. Au Joueur du jour et au Marathon, le mystère est <strong>toujours une
+    star</strong> ; à la Coupe, c'est une carte cotée de l'album — et sa rareté est annoncée. La recherche ne répond
+    qu'aux <strong>noms de joueurs</strong> : inutile de taper un club ou un pays pour lister des candidats.</p>
   </details>
 
   <p id="storage-warn" hidden>⚠ Sauvegarde indisponible : parties et records ne seront pas conservés si tu fermes la page.</p>
@@ -1156,6 +1192,8 @@
     <p>🏆 <strong>La Coupe</strong> : 5 joueurs mystères à deviner d'affilée — des 16es à la finale —
     avec un budget de <strong>18 essais pour tout le tournoi</strong>. Chaque essai économisé compte.
     Au bout : une note sur 100, et peut-être le trophée.</p>
+    <p>🎰 Chaque tour tire une carte : 🟤 bronze fréquente, ⚪ argent, 🟡 or… ou l'une des
+    <strong>49 💎 LÉGENDES</strong>, rarissimes. C'est comme ça qu'on remplit l'album.</p>
     <p class="ci-tour">16ES › 8ES › QUARTS › DEMI › FINALE</p>
     <div id="coupe-palmares"></div>
     <div class="di-btns">
@@ -1173,8 +1211,8 @@
       <button id="btn-duel-new">⭐ DUEL STARS</button>
       <button id="btn-duel-expert">🌍 DUEL EXPERT</button>
     </div>
-    <p style="font-size:12px;opacity:.65">Expert : le mystère peut être n'importe lequel des ~4 700 joueurs —
-    le championnat est offert dès 2 essais.</p>
+    <p style="font-size:12px;opacity:.65">Expert : le mystère peut être n'importe quelle carte cotée de l'album
+    (~1 350 joueurs) — le championnat est offert dès 2 essais.</p>
 
     <div id="salon-zone">
       <p>🏟️ <strong>Le salon privé</strong> : crée ton vestiaire, envoie le lien aux potes.
@@ -1308,7 +1346,8 @@
       <button type="button" data-g="champ" aria-pressed="true">PAR CHAMPIONNAT</button>
       <button type="button" data-g="pays" aria-pressed="false">PAR PAYS</button>
     </div>
-    <p class="alb-note">Chaque star trouvée colle sa vignette ici — les maillots gris « ? » restent à découvrir.</p>
+    <p class="alb-note">Chaque joueur coté trouvé colle sa vignette ici — cadres 🟤 bronze, ⚪ argent, 🟡 or et
+    💎 légende (bord doré animé). Les maillots gris « ? » restent à découvrir.</p>
     <div id="album-grid"></div>
   </div>
 
@@ -1330,14 +1369,14 @@
   </div>
 
   <footer>
-    Effectifs saison 2026-27 · <span id="data-count"></span> joueurs à proposer en essai<br>
-    Le joueur mystère est toujours une star connue — sauf en Difficile, Élite et Duel expert<br>
+    Saison 2026-27 · <span id="data-count"></span> joueurs, notes officielles EA FC<br>
+    Jour &amp; Marathon : le mystère est toujours une star · La Coupe : une carte de l'album, rareté annoncée<br>
     <a href="https://github.com/iliaschatt1993-code/joueur-mystere" rel="noopener">Code source</a> · Installe l'app depuis le menu de ton navigateur 📲
   </footer>
 </div>
 
-<script src="data.js?v=17"></script>
-<script src="config.js?v=17"></script>
-<script src="app.js?v=17"></script>
+<script src="data.js?v=18"></script>
+<script src="config.js?v=18"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>

@@ -10,7 +10,15 @@
   var LEAGUE_FLAG = {
     'Premier League': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'La Liga': '🇪🇸', 'Serie A': '🇮🇹', 'Bundesliga': '🇩🇪', 'Ligue 1': '🇫🇷',
     'Pro League': '🇧🇪', 'Saudi Pro League': '🇸🇦', 'MLS': '🇺🇸', 'Liga Portugal': '🇵🇹', 'Eredivisie': '🇳🇱',
-    'Süper Lig': '🇹🇷', 'Brasileirão': '🇧🇷', 'Primera División ARG': '🇦🇷'
+    'Süper Lig': '🇹🇷', 'Brasileirão': '🇧🇷', 'Primera División ARG': '🇦🇷',
+    'Championship': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'League One': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'League Two': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+    'La Liga 2': '🇪🇸', 'Serie B': '🇮🇹', 'Ligue 2': '🇫🇷', 'Bundesliga 2': '🇩🇪', '3. Liga': '🇩🇪',
+    'Ekstraklasa': '🇵🇱', 'SuperLiga roumaine': '🇷🇴', 'Superliga danoise': '🇩🇰',
+    'Super League suisse': '🇨🇭', 'Bundesliga autrichienne': '🇦🇹', 'Premiership écossaise': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+    'Championnat d’Irlande': '🇮🇪', 'Championnat de Grèce': '🇬🇷', 'Championnat de Tchéquie': '🇨🇿',
+    'Championnat de Croatie': '🇭🇷', 'Championnat d’Ukraine': '🇺🇦', 'Championnat de Hongrie': '🇭🇺',
+    'Chinese Super League': '🇨🇳', 'K League 1': '🇰🇷', 'A-League': '🇦🇺', 'Indian Super League': '🇮🇳',
+    'Copa Libertadores': '🌎', 'Copa Sudamericana': '🌎', 'Eliteserien': '🇳🇴', 'Allsvenskan': '🇸🇪'
   };
   // Postes fins ; la « ligne » (G/D/M/A) sert au 🟨 et à l'indice de départ
   var POS_LABEL = {
@@ -191,7 +199,34 @@
   var STAR_IDX = [];
   for (var _i = 0; _i < DATA.length; _i++) if (DATA[_i][8] === 1) STAR_IDX.push(_i);
   function randomStar() { return STAR_IDX[Math.floor(Math.random() * STAR_IDX.length)]; }
-  function randomAny() { return Math.floor(Math.random() * DATA.length); }
+  // \u2500\u2500 \ud83d\udc8e Raret\u00e9 (base EA) : p[9] = note officielle EA FC \u2500\u2500
+  // 4 bandes de cartes. L'ALBUM = tous les joueurs assez cot\u00e9s pour \u00eatre un
+  // myst\u00e8re jouable (avec les coups de pouce) ; en-dessous, on n'est que devinable.
+  function noteOf(p) { return p[9] || 0; }
+  var BANDS = {
+    legende: { nom: 'L\u00c9GENDE', icon: '\ud83d\udc8e' },
+    or:      { nom: 'OR',      icon: '\ud83d\udfe1' },
+    argent:  { nom: 'ARGENT',  icon: '\u26aa' },
+    bronze:  { nom: 'BRONZE',  icon: '\ud83d\udfe4' }
+  };
+  var NOTE_LEGENDE = 87, NOTE_OR = 84, NOTE_ARGENT = 80, NOTE_ALBUM = 76;
+  function bandOf(p) {
+    var n = noteOf(p);
+    return n >= NOTE_LEGENDE ? 'legende' : n >= NOTE_OR ? 'or' : n >= NOTE_ARGENT ? 'argent' : 'bronze';
+  }
+  var ALBUM_IDX = [], ALBUM_SET = {}, BAND_IDX = { legende: [], or: [], argent: [], bronze: [] };
+  for (var _k = 0; _k < DATA.length; _k++) {
+    if (noteOf(DATA[_k]) < NOTE_ALBUM) continue;
+    ALBUM_IDX.push(_k);
+    ALBUM_SET[DATA[_k][0]] = 1;
+    BAND_IDX[bandOf(DATA[_k])].push(_k);
+  }
+  // Base sans notes (vieux data.js en cache) : on retombe sur les stars
+  if (!ALBUM_IDX.length) {
+    ALBUM_IDX = STAR_IDX.slice();
+    ALBUM_IDX.forEach(function (i) { ALBUM_SET[DATA[i][0]] = 1; BAND_IDX.or.push(i); });
+  }
+  function randomAny() { return ALBUM_IDX[Math.floor(Math.random() * ALBUM_IDX.length)]; }
   function findPlayer(name) {
     var n = norm(name);
     var i = NORMS.indexOf(n);
@@ -296,7 +331,9 @@
   }
   var lastPracticeLine = '';
   function pickPracticeTarget() {
-    var all = DIFFS[diff].tous ? DATA : STAR_IDX.map(function (i) { return DATA[i]; });
+    // « toute la base » = toutes les cartes de l'album (cotées jouables) — jamais
+    // les joueurs sous le plancher, indevinables même avec les coups de pouce
+    var all = (DIFFS[diff].tous ? ALBUM_IDX : STAR_IDX).map(function (i) { return DATA[i]; });
     var pool = all.filter(function (p) { return recent.indexOf(p[0]) === -1; });
     if (!pool.length) { recent = []; pool = all; }
     // Variété : jamais deux cibles de la même ligne d'affilée quand c'est possible
@@ -361,32 +398,56 @@
   function saveCoupe() { save('jm-coupe', JSON.stringify(coupe)); }
   function coupeTarget() { return findPlayer(coupe.targets[Math.min(coupe.round, 4)]); }
   function coupeRoundPhrase(i) { return (i >= 3 ? 'la ' : 'les ') + COUPE_ROUNDS[i].label; }
-  function newCoupeRun() {
-    // Les cibles sont stockées par NOM (les index bougent quand la base est
-    // regénérée) : un homonyme (les deux Éderson…) résoudrait vers le mauvais
-    // joueur — on écarte du tirage tout nom qui n'est pas unique dans la base.
-    var sans_homonymes = STAR_IDX.filter(function (i) { return findPlayer(DATA[i][0]) === DATA[i]; });
-    // Biais collection : les stars encore absentes de l'album passent en premier
-    var manq = sans_homonymes.filter(function (i) { return !album[DATA[i][0]]; });
-    var src = manq.length >= 5 ? manq : sans_homonymes;
-    var picks = [];
-    while (picks.length < 5) {
-      var i = src[Math.floor(Math.random() * src.length)];
-      if (picks.indexOf(i) === -1) picks.push(i);
+  // 🎰 Le tirage à rareté : chaque tour pioche d'abord une BANDE (les légendes
+  // sont volontairement rares — c'est le « purée, j'ai eu Vinicius ! »), puis un
+  // joueur dedans. Anti-répétition : les 60 derniers mystères de Coupe sont
+  // écartés (persisté), et les cartes manquantes de l'album passent en premier.
+  var BAND_P = [['legende', 0.05], ['or', 0.13], ['argent', 0.32], ['bronze', 0.50]];
+  var coupeRecent = loadJSON('jm-coupe-recent', []);
+  function drawBand() {
+    var r = Math.random();
+    for (var i = 0; i < BAND_P.length; i++) {
+      r -= BAND_P[i][1];
+      if (r < 0 && BAND_IDX[BAND_P[i][0]].length) return BAND_P[i][0];
     }
-    coupe = { targets: picks.map(function (i) { return DATA[i][0]; }), round: 0, used: 0, g: [], done: false, won: false, news: 0 };
+    return 'bronze';
+  }
+  function drawCoupeTarget(dejaPris) {
+    var band = drawBand();
+    // Les cibles sont stockées par NOM (les index bougent quand la base est
+    // regénérée) : on écarte du tirage tout nom non unique (homonymes).
+    var pool = BAND_IDX[band].filter(function (i) {
+      return findPlayer(DATA[i][0]) === DATA[i] && dejaPris.indexOf(DATA[i][0]) === -1;
+    });
+    if (!pool.length) { // bande épuisée (base minuscule) : repli sur tout l'album
+      pool = ALBUM_IDX.filter(function (i) {
+        return findPlayer(DATA[i][0]) === DATA[i] && dejaPris.indexOf(DATA[i][0]) === -1;
+      });
+    }
+    var frais = pool.filter(function (i) { return coupeRecent.indexOf(DATA[i][0]) === -1; });
+    if (frais.length) pool = frais;
+    var manq = pool.filter(function (i) { return !album[DATA[i][0]]; });
+    var src = manq.length ? manq : pool;
+    return DATA[src[Math.floor(Math.random() * src.length)]][0];
+  }
+  function newCoupeRun() {
+    var picks = [];
+    while (picks.length < 5) picks.push(drawCoupeTarget(picks));
+    coupeRecent = coupeRecent.concat(picks).slice(-60);
+    save('jm-coupe-recent', JSON.stringify(coupeRecent));
+    coupe = { targets: picks, round: 0, used: 0, g: [], done: false, won: false, news: 0 };
     saveCoupe();
   }
-  // 📔 Album : toute star trouvée (tous modes) colle sa vignette
+  // 📔 Album : tout joueur coté trouvé (tous modes) colle sa vignette
   function collectPlayer(p) {
-    if (!p || album[p[0]]) return false;
+    if (!p || !ALBUM_SET[p[0]] || album[p[0]]) return false;
     album[p[0]] = DAY;
     save('jm-album', JSON.stringify(album));
     return true;
   }
   function albumCount() {
     var n = 0;
-    STAR_IDX.forEach(function (i) { if (album[DATA[i][0]]) n++; });
+    ALBUM_IDX.forEach(function (i) { if (album[DATA[i][0]]) n++; });
     return n;
   }
   function coupeNote() {
@@ -421,6 +482,7 @@
     if (collectPlayer(t)) coupe.news += 1;
     coupe.used += coupe.g.length;
     coupe.g = [];
+    var b = BANDS[bandOf(t)];
     if (coupe.round >= 4) { // 🏆 finale gagnée
       coupe.done = true; coupe.won = true;
       finalizeCoupe();
@@ -432,9 +494,9 @@
     coupe.round += 1;
     if (COUPE_BUDGET - coupe.used <= 0) { coupe.sec = true; endCoupe(); return; } // à sec avant le tour suivant
     saveCoupe();
-    confetti(30);
-    coupeBanner('✅ C’était bien ' + t[0] + ' ! 🎯 ' + (COUPE_BUDGET - coupe.used) +
-      ' essais restants — direction ' + coupeRoundPhrase(coupe.round) + '…', 2200);
+    confetti(bandOf(t) === 'legende' ? 90 : 30);
+    coupeBanner('✅ C’était bien ' + t[0] + ' ! ' + b.icon + ' Carte ' + b.nom + ' collée. 🎯 ' +
+      (COUPE_BUDGET - coupe.used) + ' essais restants — direction ' + coupeRoundPhrase(coupe.round) + '…', 2300);
   }
   function endCoupe() {
     coupe.done = true; coupe.won = false;
@@ -489,17 +551,19 @@
   // trouvées en vignette maillot, les manquantes en maillot gris « ? ».
   function stickerHTML(p) {
     var d = album[p[0]];
-    if (!d) return '<div class="alb-sticker manq">' + jerseySVG(p, true) + '<span class="an">???</span><span class="ac">à trouver</span></div>';
-    return '<div class="alb-sticker">' + (d === DAY ? '<span class="alb-new">NOUVEAU</span>' : '') +
+    var cls = 'alb-sticker r-' + bandOf(p) + (d ? '' : ' manq');
+    var note = noteOf(p) ? '<span class="alb-cote">' + noteOf(p) + '</span>' : '';
+    if (!d) return '<div class="' + cls + '">' + note + jerseySVG(p, true) + '<span class="an">???</span><span class="ac">à trouver</span></div>';
+    return '<div class="' + cls + '">' + note + (d === DAY ? '<span class="alb-new">NOUVEAU</span>' : '') +
       jerseySVG(p) + '<span class="an">' + esc(p[0].split(' ').slice(-1)[0]) + '</span><span class="ac">' + esc(p[1]) + '</span></div>';
   }
   function renderAlbum() {
-    el['album-count'].textContent = albumCount() + '/' + STAR_IDX.length;
+    el['album-count'].textContent = albumCount() + '/' + ALBUM_IDX.length;
     Array.prototype.forEach.call(el['alb-toggle'].children, function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.g === albGroup));
     });
     var secs = {};
-    STAR_IDX.forEach(function (i) {
+    ALBUM_IDX.forEach(function (i) {
       var p = DATA[i];
       var k = albGroup === 'pays' ? p[3] : p[2];
       (secs[k] = secs[k] || []).push(p);
@@ -508,7 +572,8 @@
       return secs[b].length - secs[a].length || a.localeCompare(b, 'fr');
     });
     el['album-grid'].innerHTML = keys.map(function (k) {
-      var ps = secs[k].slice().sort(function (a, b) { return (a[1] + a[0]).localeCompare(b[1] + b[0], 'fr'); });
+      // Dans chaque section : les grosses cotes d'abord (les cases qui font envie)
+      var ps = secs[k].slice().sort(function (a, b) { return noteOf(b) - noteOf(a) || (a[1] + a[0]).localeCompare(b[1] + b[0], 'fr'); });
       var have = ps.filter(function (p) { return album[p[0]]; }).length;
       var flag = albGroup === 'pays' ? ps[0][4] : (LEAGUE_FLAG[k] || '⚽');
       return '<section class="alb-sec"><h4>' + flagHTML(flag) + ' ' + esc(k) +
@@ -1038,8 +1103,15 @@
         (duel.challenger.score > 0 ? duel.challenger.score + '/' + MAX_TRIES : 'raté (X/' + MAX_TRIES + ')') + '</strong>' +
         (duel.challenger.secs != null ? ' en ' + fmtSecs(duel.challenger.secs) : '') + ' — à toi.<br>';
     }
+    // La Coupe annonce la RARETÉ de la carte en jeu : l'anticipation du pull
+    // (« une LÉGENDE ?! c'est qui ?! ») fait partie du plaisir — et c'est un indice.
+    var rarete = '';
+    if (MODE === 'coupe') {
+      var bb = BANDS[bandOf(t)];
+      rarete = '<span class="band-chip band-' + bandOf(t) + '">' + bb.icon + ' CARTE ' + bb.nom + ' EN JEU</span><br>';
+    }
     el['start-hint'].innerHTML = '<span class="mini-jersey">' + jerseySVG(t, true) + '</span>' +
-      '<span>' + defi + '🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.' +
+      '<span>' + defi + rarete + '🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.' +
       (extra ? '<br>' + extra : '') + '</span>';
     el['start-hint'].style.display = isDone() ? 'none' : 'flex';
   }
@@ -1244,7 +1316,8 @@
     el['btn-share'].hidden = false;
     el['end-visual'].innerHTML = jerseySVG(t);
     el['end-player'].innerHTML = flagHTML(t[4]) + ' ' + esc(t[0]);
-    el['end-desc'].textContent = POS_LABEL[t[6]] + ' · ' + t[1] + ' (' + t[2] + ') · ' + ageOf(t) + ' ans';
+    el['end-desc'].textContent = POS_LABEL[t[6]] + ' · ' + t[1] + ' (' + t[2] + ') · ' + ageOf(t) + ' ans' +
+      (noteOf(t) ? ' · note ' + noteOf(t) : '');
     el.countdown.style.display = 'none';
     el['btn-again'].hidden = true;
     el['end-note'].hidden = true;
