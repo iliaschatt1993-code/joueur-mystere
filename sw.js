@@ -1,5 +1,5 @@
 // Service worker du Joueur Mystère — réseau d'abord, cache en secours (jeu jouable hors ligne)
-var CACHE = 'jm-v20';
+var CACHE = 'jm-v21';
 var ASSETS = ['./', 'index.html', 'app.js', 'data.js', 'config.js', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', function (e) {

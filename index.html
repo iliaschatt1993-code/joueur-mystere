@@ -57,6 +57,7 @@
     --paper: #fbf4e2;
     --sticker-border: #fdfaf2;
     --glow-ok: none;         /* halo néon des cases exactes (nocturne) */
+    --cell-gloss: rgba(255,255,255,.4); /* reflet glacé en haut des vignettes */
     --shadow-hard: 3px 4px 0 rgba(33,30,25,.22);
     --shadow-cell: 1.5px 2px 0 rgba(33,30,25,.16);
     --font-display: "Alfa Slab One", "Rockwell", serif;
@@ -89,6 +90,7 @@
     --paper: #141c33;
     --sticker-border: #2c3a63;
     --glow-ok: 0 0 14px rgba(35,200,105,.4);
+    --cell-gloss: rgba(255,255,255,.07);
     --shadow-hard: 3px 4px 0 rgba(0,0,0,.5);
     --shadow-cell: 1.5px 2px 0 rgba(0,0,0,.45);
   }
@@ -114,23 +116,54 @@
     background-position: 0 0, 0 0, 0 299px;
     background-size: 100% 100%, 100% 100%, 100% 3px;
   }
+  /* Lumière d'ambiance : chaleur en haut de page + vignettage doux sur les bords.
+     En nocturne, deux faisceaux de projecteurs descendent des coins du stade. */
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(120% 55% at 50% -12%, rgba(255,243,208,.55), transparent 62%),
+      radial-gradient(140% 140% at 50% 42%, transparent 58%, rgba(82,62,26,.13) 100%);
+  }
+  html[data-theme="nuit"] body::after {
+    background:
+      conic-gradient(from 112deg at -4% -6%, transparent 0deg, rgba(150,182,255,.02) 5deg, rgba(150,182,255,.11) 15deg, rgba(150,182,255,.02) 25deg, transparent 31deg),
+      conic-gradient(from 217deg at 104% -6%, transparent 0deg, rgba(150,182,255,.02) 5deg, rgba(150,182,255,.11) 15deg, rgba(150,182,255,.02) 25deg, transparent 31deg),
+      radial-gradient(120% 55% at 50% -12%, rgba(122,152,255,.16), transparent 62%),
+      radial-gradient(140% 140% at 50% 42%, transparent 52%, rgba(0,2,12,.5) 100%);
+  }
   #app { max-width: 520px; margin: 0 auto; padding: 18px 12px 40px; position: relative; }
+
+  /* ── Finitions d'ensemble : la sélection est dorée, les ascenseurs sont au thème ── */
+  ::selection { background: var(--gold); color: #211e19; }
+  body { -webkit-tap-highlight-color: transparent; }
+  #album-panel::-webkit-scrollbar, #suggestions::-webkit-scrollbar { width: 9px; }
+  #album-panel::-webkit-scrollbar-track, #suggestions::-webkit-scrollbar-track { background: var(--page); }
+  #album-panel::-webkit-scrollbar-thumb, #suggestions::-webkit-scrollbar-thumb {
+    background: var(--gold-deep); border-radius: 5px; border: 2px solid var(--page);
+  }
 
   /* ── Bandeau titre : LA vignette brillante de l'album ── */
   header.sticker {
     background:
       radial-gradient(rgba(255,255,255,.09) 1px, transparent 1.45px),
+      radial-gradient(135% 120% at 50% -30%, rgba(255,158,116,.4), transparent 58%),
       linear-gradient(172deg, #d63c31, var(--red) 38%, var(--red-deep));
-    background-size: 7px 7px, 100% 100%;
+    background-size: 7px 7px, 100% 100%, 100% 100%;
     border: 5px solid var(--sticker-border);
     outline: 1px solid rgba(33,30,25,.28);
     box-shadow: inset 0 0 0 2px rgba(255,255,255,.14), 4px 5px 0 rgba(33,30,25,.24);
     border-radius: 3px;
     transform: rotate(-1.2deg);
-    padding: 16px 10px 13px;
+    padding: 18px 10px 14px;
     text-align: center;
     margin: 4px 2px 18px;
     position: relative; overflow: hidden;
+  }
+  /* Filet doré intérieur : le cadre gravé des éditions collector */
+  header.sticker::before {
+    content: ''; position: absolute; inset: 6px; pointer-events: none;
+    border: 1.5px solid rgba(243,230,194,.5); border-radius: 2px;
+    box-shadow: inset 0 0 18px rgba(138,20,14,.35);
   }
   header.sticker::after {
     content: ''; position: absolute; top: -60%; left: -45%;
@@ -148,7 +181,14 @@
     font-size: clamp(24px, 6.5vw, 34px);
     letter-spacing: .02em;
     line-height: 1.05;
-    text-shadow: 0 0 14px rgba(255,214,120,.25), 2.5px 2.5px 0 rgba(33,30,25,.4);
+    position: relative;
+    filter: drop-shadow(2.5px 2.5px 0 rgba(33,30,25,.42)) drop-shadow(0 0 14px rgba(255,214,120,.3));
+  }
+  /* Titre en feuille d'or : dégradé métallique dans les lettres (l'émoji ⚽ reste hors du clip) */
+  header.sticker h1 .foil-txt {
+    background: linear-gradient(177deg, #fffdf4 10%, #fbeec2 36%, #eccf78 50%, #fffbe8 64%, #dcb648 88%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
   }
   header.sticker .meta {
     font-family: var(--font-cond); font-weight: 600;
@@ -479,7 +519,7 @@
     background: var(--cell);
     border: 3px solid var(--sticker-border);
     outline: 1px solid rgba(33,30,25,.22);
-    box-shadow: var(--shadow-cell);
+    box-shadow: inset 0 1.5px 0 var(--cell-gloss), var(--shadow-cell);
     border-radius: 2px;
     min-height: 52px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -594,7 +634,8 @@
     display: flex; align-items: center; justify-content: center; gap: 10px;
   }
   #endcard .verdict::before, #endcard .verdict::after {
-    content: ''; height: 1.5px; width: 26px; background: var(--gold-deep); opacity: .5; flex-shrink: 0;
+    content: '✦'; font-size: 10px; color: var(--gold-deep); opacity: .75; flex-shrink: 0;
+    letter-spacing: 0;
   }
   /* Rayons dorés derrière le maillot : l'effet « carte légendaire » */
   #end-visual { display: flex; justify-content: center; margin: 12px 0 4px; position: relative; }
@@ -914,6 +955,7 @@
   @keyframes confetti-fall { to { transform: translateY(106vh) rotate(560deg); } }
 
   footer { margin-top: 28px; text-align: center; font-size: 11px; opacity: .6; line-height: 1.7; }
+  footer::before { content: '✦ ✦ ✦'; display: block; letter-spacing: .9em; padding-left: .9em; font-size: 8px; color: var(--gold-deep); margin-bottom: 8px; opacity: .9; }
   footer a { color: inherit; }
   #storage-warn { margin: 10px 2px; font-size: 12px; color: var(--red-deep); font-weight: 600; }
   #storage-warn[hidden] { display: none; }
@@ -921,7 +963,9 @@
   /* ── Mouvement réduit : on coupe TOUTES les animations décoratives ── */
   @media (prefers-reduced-motion: reduce) {
     header.sticker::after, #chrono.low, .guess-line.reveal .cell,
-    #endcard, #endcard::before, #end-visual::before, .note-chip, .confetti {
+    #endcard, #endcard::before, #end-visual::before, .note-chip, .confetti,
+    #btn-coupe-new::after, #btn-pack, .pack-carte, .pack-carte::after,
+    .cr-step.cur, .band-chip.band-legende {
       animation: none !important;
     }
     .confetti { display: none; }
@@ -942,11 +986,17 @@
     display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;
     font-family: var(--font-cond); font-weight: 700; font-size: 12.5px; letter-spacing: .04em;
   }
-  .cr-step { padding: 2px 7px; border-radius: 3px; border: 1.5px solid rgba(253,250,242,.28); opacity: .55; white-space: nowrap; }
-  .cr-step.done { opacity: .92; border-color: var(--green); color: #9fe2b5; }
-  .cr-step.cur { opacity: 1; border-color: var(--gold); color: var(--gold); animation: curpulse 1.6s ease-in-out infinite; }
-  @keyframes curpulse { 50% { box-shadow: 0 0 10px rgba(201,162,39,.55); } }
-  .cr-sep { opacity: .4; }
+  .cr-step { padding: 2px 7px; border-radius: 3px; border: 1.5px solid rgba(253,250,242,.28); opacity: .55; white-space: nowrap; transition: opacity .3s; }
+  .cr-step.done { opacity: .92; border-color: var(--green); color: #9fe2b5; background: rgba(31,164,87,.16); }
+  .cr-step.cur {
+    opacity: 1; border-color: var(--gold); color: var(--gold);
+    background: rgba(201,162,39,.14); transform: scale(1.07);
+    animation: curpulse 1.6s ease-in-out infinite;
+  }
+  /* La finale porte le diamant : dernière étape du chemin, toujours signalée */
+  .cr-step:last-of-type:not(.done):not(.cur)::after { content: ' 💎'; font-size: 10px; }
+  @keyframes curpulse { 50% { box-shadow: 0 0 12px rgba(201,162,39,.6); } }
+  .cr-sep { opacity: .45; color: var(--gold); }
   .cb-row2 {
     display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
     font-family: var(--font-cond); font-weight: 700; font-size: 14.5px;
@@ -984,8 +1034,18 @@
     color: var(--on-dark);
     background: linear-gradient(175deg, #dab440, var(--gold) 45%, var(--gold-deep));
     border: 2.5px solid var(--gold-deep);
-    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 2px 3px 0 rgba(33,30,25,.25);
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 16px rgba(201,162,39,.35), 2px 3px 0 rgba(33,30,25,.25);
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
+    position: relative; overflow: hidden;
+  }
+  /* Reflet qui balaie le bouton d'or : l'œil est attiré vers LE geste du jeu */
+  #btn-coupe-new::after {
+    content: ''; position: absolute; top: -60%; left: -45%;
+    width: 34%; height: 220%;
+    background: linear-gradient(75deg, transparent, rgba(255,255,255,.4), transparent);
+    transform: rotate(8deg);
+    animation: sheen 3.4s ease-in-out infinite;
+    pointer-events: none;
   }
   #btn-album {
     color: var(--text); background: var(--paper);
@@ -1112,12 +1172,17 @@
   /* ── 📦 Le pack de fin de Coupe ── */
   #pack-zone { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 4px 0 2px; }
   #pack-zone[hidden] { display: none; }
+  /* Le sachet scellé : reflets de foil métallique + crimp perforé haut et bas */
   #btn-pack {
     font-family: var(--font-display); font-size: 17px;
     color: var(--on-dark);
-    background: linear-gradient(175deg, #dab440, var(--gold) 45%, var(--gold-deep));
-    border: 3px solid var(--gold-deep); border-radius: 6px;
-    padding: 14px 30px; cursor: pointer;
+    background:
+      linear-gradient(115deg, rgba(255,255,255,.22) 8%, transparent 28%, rgba(255,255,255,.28) 46%, transparent 62%, rgba(255,255,255,.14) 86%),
+      linear-gradient(175deg, #dab440, var(--gold) 45%, var(--gold-deep));
+    border: 3px solid var(--gold-deep);
+    border-top-style: dashed; border-bottom-style: dashed;
+    border-radius: 6px;
+    padding: 16px 32px; cursor: pointer;
     box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.2), 0 0 14px rgba(201,162,39,.4), 2px 3px 0 rgba(33,30,25,.25);
     text-shadow: 1px 1px 0 rgba(33,30,25,.3);
     animation: packpulse 1.8s ease-in-out infinite;
@@ -1131,14 +1196,33 @@
     100% { transform: translate(1px, 1.5px) rotate(-.8deg); }
   }
   #pack-card[hidden] { display: none; }
+  @property --gx { syntax: '<percentage>'; initial-value: 50%; inherits: true; }
+  @property --gy { syntax: '<percentage>'; initial-value: -20%; inherits: true; }
   .pack-carte {
     position: relative;
     background: var(--paper); border: 3px solid var(--line); border-radius: 6px;
     box-shadow: var(--shadow-hard);
     padding: 16px 26px 13px; text-align: center;
     animation: packpop .45s cubic-bezier(.2, 1.6, .4, 1) backwards;
+    transition: transform .15s ease, box-shadow .15s ease;
+    will-change: transform;
   }
   @keyframes packpop { from { transform: scale(.4) rotate(-5deg); opacity: 0; } }
+  /* Glaçage holographique : un reflet qui suit le pointeur (--gx/--gy posés en JS,
+     décoratif pur — sans pointeur, le reflet balaie tout seul) */
+  .pack-carte::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 3px;
+    background: radial-gradient(85% 130% at var(--gx) var(--gy), rgba(255,255,255,.34), transparent 56%);
+    animation: holo-idle 5.5s ease-in-out infinite;
+  }
+  .pack-carte.r-legende::after {
+    background:
+      radial-gradient(85% 130% at var(--gx) var(--gy), rgba(255,255,255,.42), transparent 56%),
+      conic-gradient(from 210deg, rgba(255,60,120,.1), rgba(255,214,71,.14), rgba(40,220,160,.1), rgba(80,140,255,.13), rgba(255,60,120,.1));
+  }
+  @keyframes holo-idle { 0%, 100% { --gx: 18%; } 50% { --gx: 82%; } }
+  /* Sous le pointeur, le reflet obéit à la main, pas à la boucle d'attente */
+  @media (hover: hover) { .pack-carte:hover::after { animation: none; } }
   .pack-carte svg { width: 76px; height: auto; display: block; margin: 4px auto; }
   .pack-carte b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 18px; }
   .pack-carte .pc-club { display: block; font-family: var(--font-cond); font-weight: 600; font-size: 13px; opacity: .7; margin-top: 2px; }
@@ -1180,7 +1264,7 @@
 <div id="app">
   <header class="sticker">
     <button id="btn-theme" type="button">🌙</button>
-    <h1>⚽ LE JOUEUR MYSTÈRE</h1>
+    <h1>⚽ <span class="foil-txt">LE JOUEUR MYSTÈRE</span></h1>
     <div class="meta" id="puzzle-meta">…</div>
   </header>
 
@@ -1451,5 +1535,31 @@
 <script src="data.js?v=22"></script>
 <script src="config.js?v=22"></script>
 <script src="app.js?v=22"></script>
+<script>
+/* Tilt holographique des cartes de pack — décoratif pur : l'état du jeu ne dépend
+   jamais de ce script. Desktop seulement (hover), coupé si mouvement réduit. */
+(function () {
+  try {
+    if (!matchMedia('(hover: hover)').matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.addEventListener('pointermove', function (e) {
+      var c = e.target.closest && e.target.closest('.pack-carte');
+      if (!c) return;
+      var r = c.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      var px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+      c.style.transform = 'perspective(560px) rotateY(' + ((px - .5) * 10).toFixed(2) + 'deg) rotateX(' + ((.5 - py) * 10).toFixed(2) + 'deg)';
+      c.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+      c.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+    }, { passive: true });
+    document.addEventListener('pointerout', function (e) {
+      var c = e.target.closest && e.target.closest('.pack-carte');
+      if (c && !(e.relatedTarget && c.contains(e.relatedTarget))) {
+        c.style.transform = '';
+        c.style.removeProperty('--gx'); c.style.removeProperty('--gy');
+      }
+    }, { passive: true });
+  } catch (err) { /* jamais bloquant */ }
+})();
+</script>
 </body>
 </html>
