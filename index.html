@@ -16,91 +16,95 @@
 <meta name="twitter:title" content="Le Joueur Mystère — le Wordle du foot">
 <meta name="twitter:description" content="Un tournoi de footballeurs mystères : 5 joueurs à deviner, un boss légendaire en finale, un pack de cartes au bout.">
 <meta name="twitter:image" content="https://joueurmystere.com/og.jpg">
-<meta name="theme-color" content="#0b0f16">
+<meta name="theme-color" content="#0b101b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
 <script>if(location.hostname.endsWith('github.io'))location.replace('https://joueurmystere.com/'+location.search+location.hash)</script>
-<script>try{if(localStorage.getItem('jm-theme')==='nuit')document.documentElement.setAttribute('data-theme','nuit')}catch(e){}</script>
+<script>try{if(localStorage.getItem('jm-theme')!=='jour')document.documentElement.setAttribute('data-theme','nuit')}catch(e){document.documentElement.setAttribute('data-theme','nuit')}</script>
 <style>
   /* ═══════════════════════════════════════════════════════════════════
-     ÉCRAN DE JEU (v17) — l'interface d'une console, pas d'un site web.
-     Langage : angles chanfreinés, bandeaux inclinés, typographie ANTON
-     compressée, HUD permanent, accent « volt ». Deux ambiances :
-     défaut = menu clair type EA FC · [data-theme=nuit] = FUT nocturne.
+     ÉCRAN DE JEU (v18) — « la régie du match ». Direction des maquettes
+     Lovable (grille rigide, étiquettes monospace, bandeau ticker) mais
+     palette calmée : marine profond + craie + accent cyan doux — le
+     vert et l'ambre sont RÉSERVÉS au feedback des cases. Défaut = nuit
+     (régie) · [data-theme=jour] = même régie, salle éclairée.
      Le DOM et app.js sont inchangés : tout le jeu vit dans ces règles.
      ═══════════════════════════════════════════════════════════════════ */
   :root {
-    --page: #e6e9ee;
-    --page-dot: #d8dce4;       /* rayures diagonales du fond */
-    --ink: #10151d;
-    --text: #10151d;
-    --line: #10151d;
-    --on-dark: #f2f5f9;
-    --panel: #171e2a;          /* slabs HUD (haut) */
-    --panel-2: #0d121b;        /* slabs HUD (bas) */
-    --card: #f7f8fa;
-    --paper: #f1f3f6;
-    --cell: #d9dde5;
+    --page: #eceff4;
+    --page-dot: #e1e5ec;       /* rayures diagonales du fond */
+    --ink: #131a26;
+    --text: #131a26;
+    --line: #a9b2c2;
+    --on-dark: #edf1f7;
+    --panel: #16202f;          /* slabs HUD (haut) — sombres dans les 2 thèmes */
+    --panel-2: #0d1522;        /* slabs HUD (bas) */
+    --card: #ffffff;
+    --paper: #f5f7fa;
+    --cell: #dde2ea;
     --wm: transparent;
-    --volt: #c8f135;           /* l'accent console */
-    --volt-deep: #92b90d;
-    --on-volt: #10150a;
-    --red: #e0312e;
-    --red-deep: #a5241c;
-    --green: #17a355;
-    --green-deep: #0e7a3c;
-    --grass-a: #17a355;        /* les cases exactes restent vertes : sémantique du jeu */
-    --grass-b: #1cae5c;
-    --gold: #d9a922;
+    --volt: #1c7d8e;           /* l'accent régie — teal profond sur fond clair */
+    --volt-deep: #135e6c;
+    --on-volt: #f2f8f9;
+    --volt-hud: #7fd0dc;       /* le même accent, version claire pour les slabs sombres */
+    --red: #cf3a31;
+    --red-deep: #9c2721;
+    --green: #1e8a50;
+    --green-deep: #136339;
+    --grass-a: #23854f;        /* les cases exactes restent vertes : sémantique du jeu */
+    --grass-b: #2c9a5d;
+    --gold: #c79a2a;
     --gold-deep: #8a6d15;
     --gold-pale: #f2e8c8;
-    --yellow: #eab30f;
-    --yellow-deep: #a97e08;
+    --yellow: #d9a13a;
+    --yellow-deep: #a2731f;
     --sticker-border: #f7f8fa;
-    --glow-ok: none;
-    --glow-volt: 0 0 14px rgba(200,241,53,.0);
-    --cell-gloss: rgba(255,255,255,.35);
-    --shadow-hard: 0 3px 10px rgba(16,21,29,.18);
-    --shadow-cell: 0 1px 4px rgba(16,21,29,.14);
-    --cut: 10px;               /* profondeur du chanfrein */
+    --glow-ok: 0 0 0 rgba(0,0,0,0);
+    --glow-volt: 0 0 0 rgba(0,0,0,0);
+    --cell-gloss: transparent;
+    --shadow-hard: 0 3px 10px rgba(16,21,29,.14);
+    --shadow-cell: 0 1px 3px rgba(16,21,29,.1);
+    --cut: 0px;                /* v18 : angles droits, la grille fait le style */
     --font-display: "Anton", "Arial Narrow", sans-serif;
     --font-cond: "Barlow Condensed", "Arial Narrow", sans-serif;
     --font-body: "Barlow", "Helvetica Neue", sans-serif;
+    --font-mono: "JetBrains Mono", "SF Mono", "Menlo", monospace;
   }
-  /* 🌙 FUT NOCTURNE — même console, lumières éteintes dans le stade. */
+  /* 🌙 LA RÉGIE (défaut) — marine profond, craie, cyan discret. */
   html[data-theme="nuit"] {
-    --page: #090d14;
-    --page-dot: #0f1521;
-    --text: #e8edf5;
-    --line: #2b3548;
-    --on-dark: #f2f5f9;
-    --panel: #131a27;
-    --panel-2: #0b101a;
-    --card: #101724;
-    --paper: #121927;
-    --cell: #1a2233;
-    --volt: #d6ff3d;
-    --volt-deep: #9fc41a;
-    --on-volt: #0d1206;
-    --red: #ff4b41;
-    --red-deep: #c62f27;
-    --green: #1fbd63;
-    --green-deep: #128a45;
-    --grass-a: #17a355;
-    --grass-b: #1cae5c;
-    --gold: #ffd44d;
-    --gold-deep: #c99b1c;
-    --gold-pale: #2c2610;
+    --page: #0b101b;
+    --page-dot: #0f1523;
+    --text: #dde4ee;
+    --line: #263148;
+    --on-dark: #edf1f7;
+    --panel: #131a2a;
+    --panel-2: #0d1320;
+    --card: #111827;
+    --paper: #121a2b;
+    --cell: #182238;
+    --volt: #7fd0dc;
+    --volt-deep: #47a5b4;
+    --on-volt: #06232a;
+    --volt-hud: #7fd0dc;
+    --red: #e05a4f;
+    --red-deep: #b03a31;
+    --green: #2f9e63;
+    --green-deep: #1d7a49;
+    --grass-a: #23854f;
+    --grass-b: #2c9a5d;
+    --gold: #e5c05e;
+    --gold-deep: #b08c2e;
+    --gold-pale: #2a2410;
     --sticker-border: #232d42;
-    --glow-ok: 0 0 14px rgba(35,200,105,.35);
-    --glow-volt: 0 0 16px rgba(214,255,61,.28);
-    --cell-gloss: rgba(255,255,255,.05);
-    --shadow-hard: 0 4px 14px rgba(0,0,0,.5);
-    --shadow-cell: 0 1px 5px rgba(0,0,0,.45);
+    --glow-ok: 0 0 0 rgba(0,0,0,0);
+    --glow-volt: 0 0 0 rgba(0,0,0,0);
+    --cell-gloss: transparent;
+    --shadow-hard: 0 4px 14px rgba(0,0,0,.45);
+    --shadow-cell: 0 1px 4px rgba(0,0,0,.35);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -124,10 +128,25 @@
   }
   html[data-theme="nuit"] body::after {
     background:
-      radial-gradient(120% 50% at 50% -10%, rgba(97,146,255,.09), transparent 60%),
-      radial-gradient(90% 40% at 50% 0%, rgba(214,255,61,.05), transparent 70%),
-      radial-gradient(140% 140% at 50% 45%, transparent 48%, rgba(0,0,0,.55) 100%);
+      radial-gradient(120% 50% at 50% -10%, rgba(97,146,255,.07), transparent 60%),
+      radial-gradient(140% 140% at 50% 45%, transparent 48%, rgba(0,0,0,.5) 100%);
   }
+
+  /* ── Le bandeau ticker : la ligne de régie au-dessus de tout (décoratif pur,
+     rempli par un mini-script en fin de page — vide si le JS échoue) ── */
+  #ticker {
+    display: flex; justify-content: space-between; gap: 14px;
+    padding: 6px 16px;
+    font-family: var(--font-mono); font-weight: 600; font-size: 10px;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--text) 55%, transparent);
+    background: color-mix(in srgb, var(--panel-2) 12%, var(--page));
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    white-space: nowrap; overflow: hidden;
+  }
+  #ticker:empty { display: none; }
+  #ticker .tk-mid { color: var(--volt); }
+  @media (max-width: 560px) { #ticker .tk-mid { display: none; } }
   #app { max-width: 520px; margin: 0 auto; padding: 14px 12px 40px; position: relative; }
 
   /* ── Deux colonnes sur ordinateur, une seule sur mobile ──
@@ -165,48 +184,39 @@
 
   /* ── HUD titre : la barre de menu du jeu ── */
   header.sticker {
-    background:
-      repeating-linear-gradient(115deg, transparent 0 16px, rgba(255,255,255,.025) 16px 17px),
-      linear-gradient(100deg, var(--panel) 55%, var(--panel-2));
+    background: linear-gradient(100deg, var(--panel) 55%, var(--panel-2));
     border: 1px solid rgba(255,255,255,.07);
     box-shadow: var(--shadow-hard);
     padding: 16px 14px 13px;
     text-align: center;
-    margin: 2px 0 16px;
+    margin: 12px 0 16px;
     position: relative; overflow: hidden;
   }
-  /* Le filet volt : une seule ligne d'accent, inclinée comme tout le reste */
+  /* Le filet d'accent : une seule ligne, droite — la grille fait le style */
   header.sticker::before {
-    content: ''; position: absolute; left: -8px; bottom: 0; width: 46%; height: 4px;
-    background: var(--volt);
-    transform: skewX(-30deg);
-  }
-  header.sticker::after {
-    content: ''; position: absolute; left: 47%; bottom: 0; width: 10%; height: 4px;
-    background: var(--volt); opacity: .35;
-    transform: skewX(-30deg);
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: linear-gradient(90deg, var(--volt-hud) 0 34%, color-mix(in srgb, var(--volt-hud) 25%, transparent) 34%);
   }
   header.sticker h1 {
     font-family: var(--font-display);
     font-weight: 400;
     color: var(--on-dark);
-    font-size: clamp(25px, 6.6vw, 35px);
-    letter-spacing: .035em;
+    font-size: clamp(24px, 6.2vw, 33px);
+    letter-spacing: .04em;
     line-height: 1.05;
     text-transform: uppercase;
-    transform: skewX(-6deg);
     position: relative;
   }
-  /* Titre en chrome : dégradé froid dans les lettres (l'émoji reste HORS du clip) */
+  /* Titre craie : un dégradé discret dans les lettres (l'émoji reste HORS du clip) */
   .foil-txt {
-    background: linear-gradient(178deg, #ffffff 12%, #dfe6f2 40%, #9fb0c8 52%, #f2f6fc 66%, #b9c6da 90%);
+    background: linear-gradient(178deg, #ffffff 20%, #dbe3ef 60%, #b7c3d6 95%);
     -webkit-background-clip: text; background-clip: text;
     color: transparent; -webkit-text-fill-color: transparent;
   }
   header.sticker .meta {
-    font-family: var(--font-cond); font-weight: 600;
-    color: var(--volt); font-size: 13px; letter-spacing: .28em; text-transform: uppercase;
-    margin-top: 7px;
+    font-family: var(--font-mono); font-weight: 600;
+    color: var(--volt-hud); font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase;
+    margin-top: 8px;
   }
   header.sticker .meta::before { content: '// '; opacity: .6; letter-spacing: 0; }
   header.sticker .meta::after { content: ' //'; opacity: .6; letter-spacing: 0; padding-left: .28em; }
@@ -221,7 +231,6 @@
     border: 1px solid var(--line);
     padding: 6px 13px; cursor: pointer;
     box-shadow: var(--shadow-cell);
-    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
     transition: background .15s, border-color .15s, transform .15s;
   }
   #hud-nav button:active { transform: translateY(1.5px); }
@@ -293,12 +302,12 @@
     color: var(--on-dark);
     padding: 9px 14px;
     border: 1px solid rgba(255,255,255,.07);
-    border-left: 4px solid var(--volt);
+    border-left: 4px solid var(--volt-hud);
     box-shadow: var(--shadow-cell);
     font-family: var(--font-cond); font-weight: 700; font-size: 16px;
     justify-content: space-between; align-items: center; gap: 10px;
   }
-  #marathon-bar .serie { font-family: var(--font-display); font-size: 19px; color: var(--volt); letter-spacing: .04em; }
+  #marathon-bar .serie { font-family: var(--font-display); font-size: 19px; color: var(--volt-hud); letter-spacing: .04em; }
   #marathon-bar button {
     font-family: var(--font-cond); font-weight: 600; font-size: 12px;
     letter-spacing: .08em; text-transform: uppercase;
@@ -307,7 +316,7 @@
     transition: border-color .15s, color .15s;
   }
   #marathon-bar button:hover { border-color: var(--red); color: var(--red); }
-  #marathon-bar button:focus-visible { outline: 2px solid var(--volt); }
+  #marathon-bar button:focus-visible { outline: 2px solid var(--volt-hud); }
   @media (max-width: 390px) {
     #marathon-bar { font-size: 13.5px; padding: 8px 10px; gap: 7px; }
     #marathon-bar .serie { font-size: 16px; }
@@ -322,8 +331,8 @@
   #diff-picker[hidden] { display: none; }
   #diff-picker .dp-title {
     grid-column: 1 / -1; text-align: left;
-    font-family: var(--font-cond); font-weight: 700; font-size: 11px;
-    letter-spacing: .22em; text-transform: uppercase; opacity: .6;
+    font-family: var(--font-mono); font-weight: 600; font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase; opacity: .6;
     margin-bottom: 1px;
   }
   #diff-picker .dp-title::before { content: '// '; color: var(--volt-deep); opacity: 1; }
@@ -360,8 +369,8 @@
   #joker-draft[hidden] { display: none; }
   #joker-draft .jd-title {
     grid-column: 1 / -1; text-align: center;
-    font-family: var(--font-cond); font-weight: 700; font-size: 12px;
-    letter-spacing: .22em; text-transform: uppercase; opacity: .7;
+    font-family: var(--font-mono); font-weight: 600; font-size: 10.5px;
+    letter-spacing: .16em; text-transform: uppercase; opacity: .7;
   }
   .joker-card {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -401,8 +410,8 @@
     display: flex; align-items: center; justify-content: center;
     transition: background .15s, border-color .15s;
   }
-  #btn-theme:hover { background: rgba(255,255,255,.14); border-color: var(--volt); }
-  #btn-theme:focus-visible { outline: 2.5px solid var(--volt); }
+  #btn-theme:hover { background: rgba(255,255,255,.14); border-color: var(--volt-hud); }
+  #btn-theme:focus-visible { outline: 2.5px solid var(--volt-hud); }
 
   /* ── Indice de départ : la ligne d'objectif de mission ── */
   #start-hint {
@@ -472,12 +481,11 @@
   /* ── Chrono : jauge HUD ; au marathon, le fond EST la barre de temps ── */
   #chrono {
     margin: 0 auto 10px; width: fit-content; min-width: 96px; text-align: center;
-    font-family: var(--font-cond); font-weight: 700; font-size: 15px; letter-spacing: .08em;
+    font-family: var(--font-mono); font-weight: 600; font-size: 13.5px; letter-spacing: .08em;
     background: var(--panel-2); color: var(--on-dark);
     padding: 5px 20px;
     font-variant-numeric: tabular-nums;
     border: 1px solid rgba(255,255,255,.1);
-    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   }
   #chrono[hidden] { display: none; }
   #chrono.mara {
@@ -497,9 +505,8 @@
   /* ── Essais restants : segments d'énergie inclinés ── */
   #tries { display: flex; gap: 6px; justify-content: center; margin: 2px 0 12px; }
   .try-dot {
-    width: 15px; height: 14px;
+    width: 15px; height: 13px;
     border: 1px solid var(--line); background: var(--paper);
-    transform: skewX(-14deg);
     box-shadow: var(--shadow-cell);
     transition: background .2s, border-color .2s;
   }
@@ -526,8 +533,8 @@
   #notes .note-chip:nth-child(6) { animation-delay: .16s; }
   @keyframes chip-in { from { opacity: 0; transform: translateY(5px) scale(.95); } }
   .note-chip .nk {
-    font-family: var(--font-cond); font-weight: 700; font-size: 9px;
-    letter-spacing: .16em; text-transform: uppercase; opacity: .55;
+    font-family: var(--font-mono); font-weight: 600; font-size: 8.5px;
+    letter-spacing: .12em; text-transform: uppercase; opacity: .55;
   }
   .note-chip .nv {
     font-family: var(--font-cond); font-weight: 700; font-size: 15px; line-height: 1.15;
@@ -558,21 +565,24 @@
   #board { display: flex; flex-direction: column; gap: 7px; margin: 0; }
   .head-row, .guess-line { display: grid; grid-template-columns: 1.35fr 1fr 1.1fr .85fr .7fr; gap: 5px; }
   .head-row span {
-    font-family: var(--font-cond); font-weight: 700; font-size: 11px;
-    letter-spacing: .14em; text-transform: uppercase; text-align: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 9.5px;
+    letter-spacing: .12em; text-transform: uppercase; text-align: center;
     color: var(--text); opacity: .65;
+    align-self: end; line-height: 1.3;
+  }
+  @media (max-width: 560px) {
+    .head-row span { font-size: 8.5px; letter-spacing: .05em; }
   }
   .cell {
     background: var(--cell);
     border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
-    box-shadow: inset 0 1px 0 var(--cell-gloss), var(--shadow-cell);
+    box-shadow: var(--shadow-cell);
     min-height: 52px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 4px 2px; gap: 1px;
     font-family: var(--font-cond); font-weight: 600; font-size: 13px; line-height: 1.1;
     overflow: hidden;
     position: relative;
-    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
   }
   /* Marque de coin : lisible d'un coup d'œil, sans décoder la couleur */
   .cell.ok::before, .cell.close::before, .tag.ok::before, .tag.close::before {
@@ -584,23 +594,23 @@
   .cell .big { font-size: 17px; line-height: 1; }
   .cell .sub { font-size: 11px; font-weight: 500; opacity: .8; }
   .cell.ok {
-    background: linear-gradient(170deg, var(--grass-b), var(--grass-a));
+    background: var(--grass-a);
     color: #fff;
-    box-shadow: var(--shadow-cell), var(--glow-ok);
+    box-shadow: var(--shadow-cell);
     border-color: var(--green-deep);
   }
   .cell.ok .sub { opacity: .92; }
   .cell.close {
-    background: linear-gradient(170deg, #f2bd25, var(--yellow));
+    background: var(--yellow);
     color: #241d05;
     border-color: var(--yellow-deep);
   }
   .cell.name-cell {
-    background: linear-gradient(100deg, var(--panel), var(--panel-2));
+    background: var(--panel);
     color: var(--on-dark); font-size: 14px; letter-spacing: .02em;
     border-color: rgba(255,255,255,.08);
   }
-  .cell.name-cell.ok { background: linear-gradient(170deg, var(--grass-b), var(--grass-a)); }
+  .cell.name-cell.ok { background: var(--grass-a); }
   .cell.duo { flex-direction: row; gap: 3px; padding: 3px; }
   .cell.duo .tag {
     flex: 1; align-self: stretch;
@@ -636,13 +646,11 @@
   /* ── Bannière de tour : l'écran de transition entre deux matchs ── */
   #round-banner {
     margin: 12px 0 0; padding: 18px 14px;
-    background:
-      repeating-linear-gradient(115deg, transparent 0 14px, rgba(255,255,255,.03) 14px 15px),
-      linear-gradient(100deg, var(--panel) 45%, var(--panel-2));
+    background: linear-gradient(100deg, var(--panel) 45%, var(--panel-2));
     color: var(--on-dark);
     border: 1px solid rgba(255,255,255,.1);
-    border-left: 5px solid var(--volt);
-    box-shadow: var(--glow-volt), var(--shadow-hard);
+    border-left: 4px solid var(--volt-hud);
+    box-shadow: var(--shadow-hard);
     text-align: center;
     font-family: var(--font-cond); font-weight: 700; font-size: 18px;
     letter-spacing: .03em;
@@ -655,12 +663,10 @@
   #endcard {
     margin: 20px 0 0;
     position: relative;
-    background:
-      repeating-linear-gradient(115deg, transparent 0 18px, rgba(255,255,255,.02) 18px 19px),
-      linear-gradient(165deg, var(--panel), var(--panel-2));
+    background: linear-gradient(165deg, var(--panel), var(--panel-2));
     color: var(--on-dark);
     border: 1px solid rgba(255,255,255,.09);
-    border-top: 5px solid var(--volt);
+    border-top: 3px solid var(--volt-hud);
     box-shadow: var(--shadow-hard);
     padding: 18px 14px;
     text-align: center;
@@ -669,19 +675,19 @@
   @keyframes pop { 0% { transform: scale(.94); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
   #endcard[hidden] { display: none; }
   #endcard .verdict {
-    font-family: var(--font-cond); font-weight: 700; letter-spacing: .3em;
-    text-transform: uppercase; font-size: 13px; color: var(--volt);
+    font-family: var(--font-mono); font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; font-size: 11.5px; color: var(--volt-hud);
     display: flex; align-items: center; justify-content: center; gap: 10px;
   }
   #endcard .verdict::before, #endcard .verdict::after {
-    content: ''; height: 1px; width: 34px; background: var(--volt); opacity: .5; flex-shrink: 0;
+    content: ''; height: 1px; width: 34px; background: var(--volt-hud); opacity: .5; flex-shrink: 0;
   }
   /* Projecteur derrière le maillot : le spot de la présentation d'après-match */
   #end-visual { display: flex; justify-content: center; margin: 12px 0 4px; position: relative; }
   #end-visual::before {
     content: ''; position: absolute; top: 50%; left: 50%;
     width: 220px; height: 220px; margin: -110px 0 0 -110px;
-    background: repeating-conic-gradient(rgba(214,255,61,.14) 0 9deg, transparent 9deg 22deg);
+    background: repeating-conic-gradient(rgba(237,241,247,.09) 0 9deg, transparent 9deg 22deg);
     border-radius: 50%;
     -webkit-mask: radial-gradient(closest-side, #000 18%, transparent 70%);
     mask: radial-gradient(closest-side, #000 18%, transparent 70%);
@@ -695,51 +701,51 @@
   #endcard .player {
     font-family: var(--font-display); font-weight: 400; text-transform: uppercase;
     font-size: clamp(23px, 6vw, 31px); margin: 6px 0 2px; line-height: 1.1;
-    letter-spacing: .03em; transform: skewX(-4deg);
+    letter-spacing: .03em;
   }
   #endcard .desc { font-size: 14px; margin-bottom: 12px; opacity: .9; }
-  #endcard .streak { font-family: var(--font-cond); font-weight: 700; font-size: 15px; margin-bottom: 12px; color: var(--volt); }
+  #endcard .streak { font-family: var(--font-cond); font-weight: 700; font-size: 15px; margin-bottom: 12px; color: var(--volt-hud); }
   #endcard .social { font-size: 13px; font-weight: 600; color: #9fe2b5; margin-bottom: 12px; min-height: 1em; }
   #endcard .btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   /* ⚠️ .btns seulement : #btn-pack et #end-album gardent leur identité propre */
   #endcard .btns button {
     font-family: var(--font-display); font-size: 15px; letter-spacing: .06em; text-transform: uppercase;
     color: var(--on-dark);
-    background: linear-gradient(170deg, #ff5a4e, var(--red) 55%, var(--red-deep));
+    background: var(--red);
     border: none;
     padding: 13px 26px; cursor: pointer;
     box-shadow: var(--shadow-cell);
     transition: transform .07s, filter .07s;
   }
   #endcard .btns button.green {
-    background: linear-gradient(170deg, var(--volt), var(--volt) 55%, var(--volt-deep) 170%);
-    color: var(--on-volt);
-    box-shadow: var(--glow-volt), var(--shadow-cell);
+    background: linear-gradient(170deg, var(--volt-hud), var(--volt-hud) 55%, color-mix(in srgb, var(--volt-hud) 70%, #06232a) 170%);
+    color: #06232a;
+    box-shadow: var(--shadow-cell);
   }
   #endcard .btns button:active { transform: translateY(2px); }
-  #endcard button:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+  #endcard button:focus-visible { outline: 3px solid var(--volt-hud); outline-offset: 2px; }
   #copy-feedback { font-size: 13px; font-weight: 700; color: #9fe2b5; min-height: 1.2em; margin-top: 8px; }
   #countdown { font-family: var(--font-cond); font-weight: 600; font-size: 14px; margin-top: 10px; opacity: .75; font-variant-numeric: tabular-nums; }
 
   /* ── Stats : la rangée de compteurs du HUD ── */
-  #stats { margin: 18px 0 0; display: flex; gap: 7px; justify-content: center; font-family: var(--font-cond); text-align: center; }
+  #stats { margin: 18px 0 0; display: flex; gap: 7px; justify-content: center; font-family: var(--font-cond); text-align: left; }
   #stats > div {
     flex: 1; max-width: 112px;
-    background: linear-gradient(170deg, var(--panel), var(--panel-2));
+    display: flex; flex-direction: column-reverse; /* l'étiquette .k passe AU-DESSUS de la valeur */
+    background: var(--panel);
     color: var(--on-dark);
     border: 1px solid rgba(255,255,255,.08);
-    border-bottom: 3px solid var(--volt-deep);
     box-shadow: var(--shadow-cell);
-    padding: 8px 4px 7px;
+    padding: 8px 10px 7px;
   }
-  #stats .v { font-family: var(--font-display); font-weight: 400; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.15; letter-spacing: .03em; }
-  #stats .k { font-size: 9.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--volt); opacity: .92; margin-top: 1px; }
+  #stats .v { font-family: var(--font-display); font-weight: 400; font-size: 21px; font-variant-numeric: tabular-nums; line-height: 1.15; letter-spacing: .03em; }
+  #stats .k { font-family: var(--font-mono); font-size: 8.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--volt-hud); opacity: .85; margin-bottom: 3px; }
 
   /* ── Palmarès marathon local ── */
   #podium { margin: 18px 0 0; }
   #podium h2 {
-    font-family: var(--font-cond); font-weight: 700; font-size: 13px;
-    letter-spacing: .2em; text-transform: uppercase; text-align: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 11px;
+    letter-spacing: .14em; text-transform: uppercase; text-align: center;
     margin-bottom: 8px; opacity: .7;
   }
   #podium ol { list-style: none; display: flex; flex-direction: column; gap: 5px; }
@@ -774,7 +780,7 @@
   #duel-intro button {
     font-family: var(--font-display); font-size: 15px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--on-dark);
-    background: linear-gradient(170deg, #ff5a4e, var(--red) 55%, var(--red-deep));
+    background: var(--red);
     border: none;
     padding: 13px 26px; cursor: pointer;
     box-shadow: var(--shadow-cell);
@@ -786,8 +792,8 @@
   /* ── Classement mondial ── */
   #classement { margin: 18px 0 0; }
   #classement h2 {
-    font-family: var(--font-cond); font-weight: 700; font-size: 13px;
-    letter-spacing: .2em; text-transform: uppercase; text-align: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 11px;
+    letter-spacing: .14em; text-transform: uppercase; text-align: center;
     margin-bottom: 8px; opacity: .8;
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
@@ -935,7 +941,6 @@
     font-style: normal; width: 15px; height: 15px; flex: none;
     background: var(--panel-2); color: var(--on-dark); font-size: 9px; font-weight: 700;
     display: inline-flex; align-items: center; justify-content: center;
-    clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
   }
   .ic-cell {
     flex: 1; padding: 6px 0; font-weight: 700; font-size: 12.5px;
@@ -983,18 +988,18 @@
   /* ── Bloc lien de défi (duel) : le lien est AFFICHÉ, jamais seulement copié ── */
   #duel-share { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); display: flex; flex-direction: column; gap: 9px; }
   #duel-share[hidden] { display: none; }
-  #duel-share .ds-title { font-family: var(--font-cond); font-weight: 700; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--volt); }
+  #duel-share .ds-title { font-family: var(--font-mono); font-weight: 600; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--volt-hud); }
   #duel-url {
     width: 100%; font-family: var(--font-body); font-size: 13px;
     padding: 9px 10px; border: 1px solid rgba(255,255,255,.2);
     background: rgba(0,0,0,.25); color: var(--on-dark); border-radius: 0;
   }
-  #duel-url:focus { outline: 2px solid var(--volt); }
+  #duel-url:focus { outline: 2px solid var(--volt-hud); }
   #duel-share .ds-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   #duel-share .ds-btns button, #duel-share .ds-btns a {
     font-family: var(--font-display); font-size: 13px; letter-spacing: .05em; text-transform: uppercase;
-    color: var(--on-volt);
-    background: linear-gradient(170deg, var(--volt), var(--volt) 55%, var(--volt-deep) 170%);
+    color: #06232a;
+    background: var(--volt-hud);
     border: none;
     padding: 11px 15px; cursor: pointer;
     text-decoration: none; display: inline-flex; align-items: center;
@@ -1011,8 +1016,8 @@
 
   footer { margin-top: 28px; text-align: center; font-size: 11px; opacity: .6; line-height: 1.7; }
   footer::before {
-    content: '· / / ·'; display: block; letter-spacing: .4em; padding-left: .4em;
-    font-size: 9px; color: var(--volt-deep); margin-bottom: 8px; opacity: .9; font-weight: 700;
+    content: '// · //'; display: block; letter-spacing: .3em; padding-left: .3em;
+    font-family: var(--font-mono); font-size: 9px; color: var(--volt-deep); margin-bottom: 8px; opacity: .9; font-weight: 600;
   }
   footer a { color: inherit; }
   #storage-warn { margin: 10px 0; font-size: 12px; color: var(--red-deep); font-weight: 600; }
@@ -1036,40 +1041,37 @@
   .mode-tab { flex: 1 1 42%; }
   #coupe-bar {
     margin: 0 0 12px;
-    background:
-      repeating-linear-gradient(115deg, transparent 0 16px, rgba(255,255,255,.025) 16px 17px),
-      linear-gradient(100deg, var(--panel) 55%, var(--panel-2));
+    background: linear-gradient(100deg, var(--panel) 55%, var(--panel-2));
     color: var(--on-dark);
     padding: 10px 12px;
     border: 1px solid rgba(255,255,255,.08);
-    border-left: 4px solid var(--volt);
+    border-left: 4px solid var(--volt-hud);
     box-shadow: var(--shadow-cell);
   }
   #coupe-rounds {
     display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;
-    font-family: var(--font-cond); font-weight: 700; font-size: 12.5px; letter-spacing: .05em;
+    font-family: var(--font-mono); font-weight: 600; font-size: 10.5px; letter-spacing: .04em;
     text-transform: uppercase;
   }
   .cr-step {
     padding: 2px 8px; border: 1px solid rgba(242,245,249,.25); opacity: .5; white-space: nowrap;
     transition: opacity .3s;
-    clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
   }
   .cr-step.done { opacity: .92; border-color: var(--green); color: #9fe2b5; background: rgba(31,164,87,.15); }
   .cr-step.cur {
-    opacity: 1; border-color: var(--volt); color: var(--volt);
-    background: rgba(214,255,61,.1); transform: scale(1.07);
+    opacity: 1; border-color: var(--volt-hud); color: var(--volt-hud);
+    background: rgba(127,208,220,.1); transform: scale(1.05);
     animation: curpulse 1.6s ease-in-out infinite;
   }
   /* La finale porte le diamant : dernière étape du chemin, toujours signalée */
   .cr-step:last-of-type:not(.done):not(.cur)::after { content: ' 💎'; font-size: 10px; }
-  @keyframes curpulse { 50% { box-shadow: 0 0 12px rgba(214,255,61,.55); } }
-  .cr-sep { opacity: .45; color: var(--volt); }
+  @keyframes curpulse { 50% { box-shadow: 0 0 10px rgba(127,208,220,.45); } }
+  .cr-sep { opacity: .45; color: var(--volt-hud); }
   .cb-row2 {
     display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
     font-family: var(--font-cond); font-weight: 700; font-size: 14.5px;
   }
-  #coupe-budget b { font-family: var(--font-display); font-weight: 400; color: var(--volt); font-size: 18px; letter-spacing: .04em; }
+  #coupe-budget b { font-family: var(--font-display); font-weight: 400; color: var(--volt-hud); font-size: 18px; letter-spacing: .04em; }
   #coupe-bar button {
     font-family: var(--font-cond); font-weight: 600; font-size: 12px;
     letter-spacing: .08em; text-transform: uppercase;
@@ -1078,16 +1080,14 @@
     transition: border-color .15s, color .15s;
   }
   #coupe-bar button:hover { border-color: var(--red); color: var(--red); }
-  #coupe-bar button:focus-visible { outline: 2px solid var(--volt); }
+  #coupe-bar button:focus-visible { outline: 2px solid var(--volt-hud); }
   /* ── L'écran d'accueil de la Coupe : le menu principal du jeu ── */
   #coupe-intro {
     margin: 0 0 14px; padding: 20px 14px 16px;
-    background:
-      repeating-linear-gradient(115deg, transparent 0 18px, rgba(255,255,255,.02) 18px 19px),
-      linear-gradient(160deg, var(--panel) 30%, var(--panel-2));
+    background: linear-gradient(160deg, var(--panel) 30%, var(--panel-2));
     color: var(--on-dark);
     border: 1px solid rgba(255,255,255,.09);
-    border-top: 5px solid var(--volt);
+    border-top: 3px solid var(--volt-hud);
     text-align: center;
     display: flex; flex-direction: column; gap: 12px; align-items: center;
     box-shadow: var(--shadow-hard);
@@ -1096,8 +1096,8 @@
   #coupe-intro[hidden] { display: none; }
   #coupe-intro p { font-size: 14px; line-height: 1.5; max-width: 42ch; opacity: .92; }
   #coupe-intro .ci-tour {
-    font-family: var(--font-cond); font-weight: 700; font-size: 13px;
-    letter-spacing: .18em; color: var(--volt); opacity: .9;
+    font-family: var(--font-mono); font-weight: 600; font-size: 11px;
+    letter-spacing: .12em; color: var(--volt-hud); opacity: .9;
   }
   #coupe-palmares { font-family: var(--font-cond); font-weight: 600; font-size: 14.5px; }
   #coupe-palmares b { font-family: var(--font-display); font-weight: 400; color: var(--gold); letter-spacing: .03em; }
@@ -1111,21 +1111,11 @@
     flex: 1 1 100%;
     font-size: 20px !important; letter-spacing: .05em;
     padding: 18px 22px !important;
-    color: var(--on-volt);
-    background: linear-gradient(170deg, #e3ff6a, var(--volt) 40%, var(--volt-deep) 180%);
-    box-shadow: 0 0 22px rgba(214,255,61,.35), var(--shadow-hard);
+    color: #06232a;
+    background: linear-gradient(170deg, #a4e2ec, var(--volt-hud) 45%, #58b2c1 180%);
+    box-shadow: 0 0 18px rgba(127,208,220,.25), var(--shadow-hard);
     position: relative; overflow: hidden;
   }
-  /* Reflet qui balaie le bouton volt : l'œil est attiré vers LE geste du jeu */
-  #btn-coupe-new::after {
-    content: ''; position: absolute; top: -60%; left: -45%;
-    width: 34%; height: 220%;
-    background: linear-gradient(75deg, transparent, rgba(255,255,255,.45), transparent);
-    transform: rotate(8deg);
-    animation: sheen 3.4s ease-in-out infinite;
-    pointer-events: none;
-  }
-  @keyframes sheen { 0%, 55% { left: -45%; } 100% { left: 135%; } }
   #btn-album, #btn-succes {
     flex: 1 1 40%;
     padding: 12px 8px !important;
@@ -1134,7 +1124,7 @@
     box-shadow: var(--shadow-cell);
   }
   #coupe-intro .di-btns button:active { transform: translateY(2px); }
-  #coupe-intro .di-btns button:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+  #coupe-intro .di-btns button:focus-visible { outline: 3px solid var(--volt-hud); outline-offset: 2px; }
   /* ── Le titre du menu principal : ANTON incliné, souligné volt ── */
   .ci-hero {
     position: relative; width: 150px; height: 96px;
@@ -1143,7 +1133,7 @@
   }
   .ci-hero::before {
     content: ''; position: absolute; inset: -46px;
-    background: repeating-conic-gradient(rgba(214,255,61,.13) 0 9deg, transparent 9deg 22deg);
+    background: repeating-conic-gradient(rgba(237,241,247,.09) 0 9deg, transparent 9deg 22deg);
     border-radius: 50%;
     -webkit-mask: radial-gradient(closest-side, #000 22%, transparent 72%);
     mask: radial-gradient(closest-side, #000 22%, transparent 72%);
@@ -1152,23 +1142,22 @@
   }
   .ci-trophy {
     position: relative; font-size: 68px; line-height: 1;
-    filter: drop-shadow(0 6px 14px rgba(0,0,0,.4)) drop-shadow(0 0 22px rgba(214,255,61,.35));
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.4)) drop-shadow(0 0 18px rgba(229,192,94,.3));
     animation: trophy-bob 3.4s ease-in-out infinite;
   }
   @keyframes trophy-bob { 50% { transform: translateY(-6px) rotate(-2.5deg); } }
   .ci-title {
     font-family: var(--font-display); font-size: clamp(32px, 8.5vw, 42px);
     line-height: 1; letter-spacing: .04em; text-transform: uppercase;
-    transform: skewX(-6deg);
     position: relative; padding-bottom: 8px;
   }
   .ci-title::after {
-    content: ''; position: absolute; left: 12%; right: 12%; bottom: 0; height: 4px;
-    background: var(--volt);
+    content: ''; position: absolute; left: 12%; right: 12%; bottom: 0; height: 3px;
+    background: var(--volt-hud);
   }
   /* ⚠️ background-image, PAS le raccourci background : il réinitialiserait background-clip:text */
   .ci-title .foil-txt {
-    background-image: linear-gradient(178deg, #ffffff 12%, #dfe6f2 40%, #9fb0c8 52%, #f2f6fc 66%, #b9c6da 90%);
+    background-image: linear-gradient(178deg, #ffffff 20%, #dbe3ef 60%, #b7c3d6 95%);
   }
   /* La note du parcours : l'écusson de rating façon carte FUT */
   #end-note {
@@ -1193,7 +1182,7 @@
     font-family: var(--font-cond); font-weight: 700; font-size: 13.5px;
     letter-spacing: .05em; text-transform: uppercase;
   }
-  #end-album:focus-visible { outline: 3px solid var(--volt); }
+  #end-album:focus-visible { outline: 3px solid var(--volt-hud); }
   #end-album[hidden] { display: none; }
 
   /* ── 📔 L'ALBUM : la collection, écran plein jeu ── */
@@ -1227,13 +1216,11 @@
   #end-succes { display: flex; flex-direction: column; gap: 6px; align-items: center; margin-bottom: 12px; }
   #end-succes[hidden] { display: none; }
   .suc-toast {
-    background: rgba(214,255,61,.12); color: var(--on-dark);
-    border: 1px solid var(--volt);
+    background: rgba(127,208,220,.1); color: var(--on-dark);
+    border: 1px solid var(--volt-hud);
     padding: 6px 15px;
     font-family: var(--font-cond); font-weight: 600; font-size: 14px;
-    box-shadow: 0 0 14px rgba(214,255,61,.2);
     animation: chip-in .3s ease both;
-    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   }
   .alb-head {
     position: sticky; top: 0; z-index: 2;
@@ -1257,7 +1244,6 @@
     background: var(--paper); color: var(--text);
     border: 1px solid var(--line); cursor: pointer;
     box-shadow: var(--shadow-cell);
-    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   }
   .alb-toggles button[aria-pressed="true"] {
     background: var(--volt); color: var(--on-volt); border-color: var(--volt-deep);
@@ -1266,8 +1252,8 @@
   #album-grid { max-width: 520px; margin: 0 auto; }
   .alb-sec { margin-bottom: 18px; }
   .alb-sec h4 {
-    font-family: var(--font-cond); font-weight: 700; font-size: 13px;
-    letter-spacing: .12em; text-transform: uppercase;
+    font-family: var(--font-mono); font-weight: 600; font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase;
     display: flex; align-items: center; gap: 7px; margin-bottom: 7px;
   }
   .alb-sec h4::before { content: '//'; color: var(--volt-deep); font-size: 11px; }
@@ -1278,7 +1264,6 @@
     position: relative; background: var(--paper);
     border: 1px solid var(--line);
     box-shadow: var(--shadow-cell); padding: 8px 4px 6px; text-align: center;
-    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
   }
   .alb-sticker svg { width: 40px; height: auto; display: block; margin: 0 auto 3px; }
   .alb-sticker .an {
@@ -1293,7 +1278,6 @@
     background: var(--volt); color: var(--on-volt);
     font-family: var(--font-cond); font-weight: 700; font-size: 8.5px; letter-spacing: .06em;
     padding: 1.5px 5px; border: 1px solid var(--volt-deep);
-    clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
     z-index: 1;
   }
 
@@ -1323,7 +1307,6 @@
     font-family: var(--font-cond); font-weight: 700; font-size: 12px; letter-spacing: .12em;
     padding: 2px 10px; border: 1px solid var(--line);
     background: var(--cell); text-transform: uppercase;
-    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
   }
   .band-chip.band-argent { border-color: #8f9aad; }
   .band-chip.band-or { border-color: var(--gold-deep); background: var(--gold-pale); color: var(--gold-deep); }
@@ -1425,7 +1408,7 @@
   .pc-pick .pack-carte b { font-size: 14px; }
   .pc-pick .pack-carte .pc-club { font-size: 11px; }
   .pc-pick .pack-carte .pc-note { font-size: 16px; top: 3px; right: 7px; }
-  .pc-pick:hover .pack-carte, .pc-pick:focus-visible .pack-carte { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--volt), var(--shadow-hard); }
+  .pc-pick:hover .pack-carte, .pc-pick:focus-visible .pack-carte { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--volt-hud), var(--shadow-hard); }
   .pc-pick:focus-visible { outline: none; }
 
   /* ═══ 🖥️ FORMAT ORDINATEUR (≥ 980px) : le jeu à gauche, le panneau
@@ -1433,9 +1416,14 @@
      En dessous de 980px, rien ne change : c'est le format mobile. ═══ */
   @media (min-width: 980px) {
     #app { max-width: 1100px; padding: 20px 28px 60px; }
-    header.sticker { margin-bottom: 14px; padding: 20px 14px 16px; }
-    header.sticker h1 { font-size: 44px; }
-    header.sticker .meta { font-size: 14px; }
+    /* La barre de régie : titre à gauche, méta à droite — une bande, pas une affiche */
+    header.sticker {
+      margin-bottom: 14px; padding: 14px 46px 13px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 18px;
+      text-align: left;
+    }
+    header.sticker h1 { font-size: 30px; }
+    header.sticker .meta { font-size: 12px; margin-top: 0; }
     #hud-nav { margin: -6px 0 14px; }
     #hud-nav button { font-size: 13.5px; padding: 7px 16px; }
     #layout {
@@ -1513,8 +1501,8 @@
     .cr-step.done { background: none; }
     .cr-step.done::before { border-color: var(--green); background: var(--green); box-shadow: 0 0 8px rgba(31,164,87,.5); }
     .cr-step.done:not(:last-of-type)::after { background: var(--green); opacity: .55; }
-    .cr-step.cur { transform: translateX(4px); background: rgba(214,255,61,.09); }
-    .cr-step.cur::before { border-color: var(--volt); background: var(--volt); box-shadow: 0 0 10px rgba(214,255,61,.7); }
+    .cr-step.cur { transform: translateX(4px); background: rgba(127,208,220,.08); }
+    .cr-step.cur::before { border-color: var(--volt-hud); background: var(--volt-hud); box-shadow: 0 0 9px rgba(127,208,220,.6); }
     .cb-row2 { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(242,245,249,.12); }
     /* Écrans plein jeu : l'album et les succès profitent de la largeur */
     .alb-head, .alb-toggles, .alb-note, #album-grid { max-width: 1000px; }
@@ -1526,6 +1514,9 @@
 </style>
 </head>
 <body>
+<!-- v18 : la ligne de régie — décorative pure, remplie par le script en fin de page
+     (vide si le JS échoue : #ticker:empty la masque) -->
+<div id="ticker" aria-hidden="true"></div>
 <div id="app">
   <header class="sticker">
     <button id="btn-theme" type="button">🌙</button>
@@ -1839,10 +1830,21 @@
   </footer>
 </div>
 
-<script src="data.js?v=25"></script>
-<script src="config.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="data.js?v=26"></script>
+<script src="config.js?v=26"></script>
+<script src="app.js?v=26"></script>
 <script>
+/* Le bandeau ticker — décoratif pur, jamais bloquant. */
+(function () {
+  try {
+    var d = new Date();
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    document.getElementById('ticker').innerHTML =
+      '<span>// ' + p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + '</span>' +
+      '<span class="tk-mid">LA COUPE · 5 MYSTÈRES · 20 ESSAIS</span>' +
+      '<span>JOUEURMYSTERE.COM //</span>';
+  } catch (err) { /* le :empty masque la barre */ }
+})();
 /* Tilt holographique des cartes de pack — décoratif pur : l'état du jeu ne dépend
    jamais de ce script. Desktop seulement (hover), coupé si mouvement réduit. */
 (function () {

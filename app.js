@@ -912,8 +912,8 @@
 
   if (!storageOK) el['storage-warn'].hidden = false;
 
-  // ── Thème : album crème (jour) ou stade en nocturne (nuit) ──
-  var theme = load('jm-theme', 'jour');
+  // ── Thème : la régie (nuit, défaut v18) ou salle éclairée (jour) ──
+  var theme = load('jm-theme', 'nuit');
   function applyTheme() {
     document.documentElement.setAttribute('data-theme', theme === 'nuit' ? 'nuit' : 'jour');
     el['btn-theme'].textContent = theme === 'nuit' ? '☀️' : '🌙';
