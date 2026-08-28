@@ -1480,6 +1480,42 @@
     }
     #coupe-bar { margin-bottom: 14px; }
     #stats > div { max-width: none; }
+    /* Le panneau se lit dans l'ordre du jeu : parcours, enquête, puis le reste */
+    #col-side { display: flex; flex-direction: column; }
+    #coupe-bar { order: 1; } #notes { order: 2; }
+    #stats { order: 3; } #classement { order: 4; } #podium { order: 5; }
+    #club-banner { order: 6; } details.rules { order: 7; }
+    /* ── Le parcours devient une VRAIE liste d'étapes, de haut en bas :
+       marqueurs ronds reliés par un rail, transitions douces à chaque tour ── */
+    #coupe-rounds { flex-direction: column; align-items: stretch; gap: 2px; }
+    .cr-sep { display: none; }
+    .cr-step {
+      clip-path: none; border: none;
+      display: flex; align-items: center;
+      position: relative; padding: 8px 10px 8px 34px;
+      font-size: 14px;
+      transition: opacity .45s ease, background .45s ease, color .45s ease, transform .45s ease;
+    }
+    .cr-step::before {
+      content: ''; position: absolute; left: 12px; top: 50%;
+      width: 9px; height: 9px; margin-top: -5.5px; border-radius: 50%;
+      border: 2px solid rgba(242,245,249,.4); background: transparent;
+      transition: background .45s ease, border-color .45s ease, box-shadow .45s ease;
+    }
+    /* Le rail qui relie une étape à la suivante (⚠️ le ::after « 💎 » de la finale
+       cible :last-of-type — aucun conflit, le rail ne s'applique qu'aux autres) */
+    .cr-step:not(:last-of-type)::after {
+      content: ''; position: absolute; left: 16.5px; top: calc(50% + 7px);
+      width: 1.5px; height: calc(100% - 10px);
+      background: rgba(242,245,249,.16);
+      transition: background .45s ease;
+    }
+    .cr-step.done { background: none; }
+    .cr-step.done::before { border-color: var(--green); background: var(--green); box-shadow: 0 0 8px rgba(31,164,87,.5); }
+    .cr-step.done:not(:last-of-type)::after { background: var(--green); opacity: .55; }
+    .cr-step.cur { transform: translateX(4px); background: rgba(214,255,61,.09); }
+    .cr-step.cur::before { border-color: var(--volt); background: var(--volt); box-shadow: 0 0 10px rgba(214,255,61,.7); }
+    .cb-row2 { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(242,245,249,.12); }
     /* Écrans plein jeu : l'album et les succès profitent de la largeur */
     .alb-head, .alb-toggles, .alb-note, #album-grid { max-width: 1000px; }
     .alb-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
