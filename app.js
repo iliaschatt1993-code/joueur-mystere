@@ -225,6 +225,8 @@
 
   // ── État MARATHON ──
   // Marathon DU JOUR (classé) : même séquence pour tout le monde, une tentative par jour.
+  // Séquence identique pour tout le monde (seed du jour), mais équilibrée par ligne
+  // depuis le 29/08 : le mélange brut enchaînait les attaquants (44 % du vivier de stars).
   var mdayOrder = (function () {
     var rng = mulberry32(fnv('marathon:' + DAY));
     var idx = STAR_IDX.slice();
@@ -232,7 +234,22 @@
       var j = Math.floor(rng() * (i + 1));
       var tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
     }
-    return idx;
+    var buckets = { G: [], D: [], M: [], A: [] }, lines = ['A', 'M', 'D', 'G'];
+    idx.forEach(function (i) { buckets[POS_LINE[DATA[i][6]]].push(i); });
+    var out = [], prev = '';
+    while (out.length < idx.length) {
+      // Tirage seedé pondéré par le stock restant, ligne précédente exclue :
+      // défenseurs et gardiens sont répartis sur toute la séquence, sans motif mécanique.
+      var elig = lines.filter(function (l) { return buckets[l].length && l !== prev; });
+      if (!elig.length) elig = [prev];
+      var total = 0;
+      elig.forEach(function (l) { total += buckets[l].length; });
+      var r = rng() * total, pick = elig[0];
+      for (var k = 0; k < elig.length; k++) { r -= buckets[elig[k]].length; if (r < 0) { pick = elig[k]; break; } }
+      out.push(buckets[pick].shift());
+      prev = pick;
+    }
+    return out;
   })();
   var mday = loadJSON('jm-mday-' + DAY, { serie: 0, g: [], done: false });
   // Entraînement libre (après le classé du jour) : aléatoire, illimité
@@ -269,11 +286,16 @@
   function maxTriesNow() {
     return (MODE === 'marathon' && !ranked() && run && run.joker === 'septieme') ? 7 : MAX_TRIES;
   }
+  var lastPracticeLine = '';
   function pickPracticeTarget() {
     var all = DIFFS[diff].tous ? DATA : STAR_IDX.map(function (i) { return DATA[i]; });
     var pool = all.filter(function (p) { return recent.indexOf(p[0]) === -1; });
     if (!pool.length) { recent = []; pool = all; }
+    // Variété : jamais deux cibles de la même ligne d'affilée quand c'est possible
+    var varied = lastPracticeLine ? pool.filter(function (p) { return POS_LINE[p[6]] !== lastPracticeLine; }) : pool;
+    if (varied.length) pool = varied;
     var p = pool[Math.floor(Math.random() * pool.length)];
+    lastPracticeLine = POS_LINE[p[6]];
     recent.push(p[0]);
     if (recent.length > 40) recent = recent.slice(-40);
     save('jm-recent', JSON.stringify(recent));
@@ -566,8 +588,17 @@
     if (jk === 'loupe') extra = '🃏 Joker : il joue en <strong>' + esc(t[2]) + '</strong>.';
     else if (jk === 'etatcivil') extra = '🃏 Joker : il a <strong>' + ageOf(t) + ' ans</strong>.';
     else if (jk === 'boussole') extra = '🃏 Joker : il est <strong>' + POS_LABEL[t[6]] + '</strong>.';
+    // Défi reçu : annoncer l'adversaire et le score à battre dès l'arrivée,
+    // pas seulement au verdict — c'est le crochet qui lance la partie.
+    var defi = '';
+    if (MODE === 'duel' && duel && duel.challenger && !duel.done) {
+      var advN = duel.challenger.name ? esc(duel.challenger.name) : 'Ton adversaire';
+      defi = '⚔️ <strong>' + advN + ' te défie !</strong> Son score : <strong>' +
+        (duel.challenger.score > 0 ? duel.challenger.score + '/' + MAX_TRIES : 'raté (X/' + MAX_TRIES + ')') + '</strong>' +
+        (duel.challenger.secs != null ? ' en ' + fmtSecs(duel.challenger.secs) : '') + ' — à toi.<br>';
+    }
     el['start-hint'].innerHTML = '<span class="mini-jersey">' + jerseySVG(t, true) + '</span>' +
-      '<span>🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.' +
+      '<span>' + defi + '🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.' +
       (extra ? '<br>' + extra : '') + '</span>';
     el['start-hint'].style.display = isDone() ? 'none' : 'flex';
   }
