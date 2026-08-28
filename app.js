@@ -209,7 +209,8 @@
    'stats', 's-played', 's-rate', 's-streak', 's-max', 'podium', 'podium-list',
    'classement', 'classement-list', 'classement-note', 'btn-refresh-classement',
    'pseudo-dialog', 'pseudo-input', 'btn-pseudo-ok', 'storage-warn', 'data-count',
-   'dp-note', 'intro-dialog', 'btn-intro-go', 'btn-intro-rules'].forEach(function (id) {
+   'dp-note', 'intro-dialog', 'btn-intro-go', 'btn-intro-rules',
+   'intro-pseudo', 'intro-club', 'club-banner', 'club-dialog', 'club-select', 'btn-club-ok'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
   el['data-count'].textContent = DATA.length.toLocaleString('fr-BE');
@@ -359,11 +360,76 @@
   });
   el['pseudo-input'].addEventListener('keydown', function (e) { if (e.key === 'Enter') el['btn-pseudo-ok'].click(); });
 
+  // ── Club de cœur : vignette « prochain match » (API /api/prochain-match, Vercel) ──
+  var favClub = load('jm-club', '');
+  var CLUBS = (function () {
+    var vus = {}, liste = [];
+    DATA.forEach(function (p) { if (!vus[p[1]]) { vus[p[1]] = 1; liste.push(p[1]); } });
+    return liste.sort(new Intl.Collator('fr').compare);
+  })();
+  function remplirSelectClubs(sel, vide) {
+    sel.innerHTML = '';
+    var o0 = document.createElement('option');
+    o0.value = ''; o0.textContent = vide;
+    sel.appendChild(o0);
+    CLUBS.forEach(function (c) {
+      var o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      if (c === favClub) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  function fmtMatch(m) {
+    var d = new Date(m.date);
+    var quand = d.toLocaleDateString('fr-BE', { weekday: 'short', day: 'numeric', month: 'short' }) +
+      ' · ' + d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
+    return quand + ' — ' + m.domicile + ' vs ' + m.exterieur + (m.competition ? ' (' + m.competition + ')' : '');
+  }
+  function renderClubBanner() {
+    var b = el['club-banner'];
+    if (!b) return;
+    if (!favClub) {
+      b.innerHTML = '⭐ <strong>Choisis ton club de cœur</strong> — son prochain match s’affichera ici.';
+      b.hidden = false;
+      return;
+    }
+    b.innerHTML = '⭐ <strong>' + esc(favClub) + '</strong> <span class="cb-match">⏳ prochain match…</span>';
+    b.hidden = false;
+    fetch('/api/prochain-match?club=' + encodeURIComponent(favClub))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (m) {
+        b.innerHTML = '⭐ <strong>' + esc(favClub) + '</strong>' +
+          (m ? '<span class="cb-match">📅 ' + esc(fmtMatch(m)) + '</span>' : '');
+      })
+      .catch(function () {
+        b.innerHTML = '⭐ <strong>' + esc(favClub) + '</strong>';
+      });
+  }
+  el['club-banner'].addEventListener('click', function () {
+    remplirSelectClubs(el['club-select'], '— Aucun club —');
+    el['club-dialog'].hidden = false;
+    el['club-select'].focus();
+  });
+  el['btn-club-ok'].addEventListener('click', function () {
+    favClub = el['club-select'].value;
+    save('jm-club', favClub);
+    el['club-dialog'].hidden = true;
+    renderClubBanner();
+  });
+  renderClubBanner();
+
   // ── Intro des nouveaux joueurs (une fois, en DOM — jamais de modal natif) ──
   (function introNouveau() {
     if (load('jm-intro-vue', null) || statsJour.played > 0 || jour.done || jour.g.length) return;
+    remplirSelectClubs(el['intro-club'], '⭐ Ton club de cœur — optionnel');
     el['intro-dialog'].hidden = false;
-    function fermer() { el['intro-dialog'].hidden = true; save('jm-intro-vue', '1'); }
+    function fermer() {
+      // Pseudo et club saisis à l'accueil : retenus pour le classement, les duels et la vignette match
+      var v = el['intro-pseudo'].value.replace(/[<>&"']/g, '').trim().slice(0, 20);
+      if (v) { pseudo = v; save('jm-pseudo', pseudo); }
+      if (el['intro-club'].value) { favClub = el['intro-club'].value; save('jm-club', favClub); renderClubBanner(); }
+      el['intro-dialog'].hidden = true; save('jm-intro-vue', '1');
+    }
     el['btn-intro-go'].addEventListener('click', fermer);
     el['btn-intro-rules'].addEventListener('click', function () {
       fermer();

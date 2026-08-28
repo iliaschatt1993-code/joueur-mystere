@@ -748,6 +748,23 @@
     background: var(--sticker-border);
   }
   .pseudo-card input:focus { outline: 3px solid var(--gold); }
+  .pseudo-card select {
+    width: 100%; font-family: var(--font-cond); font-size: 17px; font-weight: 600;
+    padding: 10px 12px; border: 2.5px solid var(--line); border-radius: 5px;
+    background: var(--sticker-border); color: var(--text); cursor: pointer;
+  }
+  .pseudo-card select:focus { outline: 3px solid var(--gold); }
+  .ic-perso { display: grid; gap: 8px; margin-bottom: 2px; }
+  /* Vignette « mon club » : le prochain match du club de cœur, cliquable pour changer */
+  #club-banner {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    font-family: var(--font-cond); font-weight: 600; font-size: 15px; color: var(--text);
+    background: var(--paper); border: 2px dashed var(--gold-deep); border-radius: 5px;
+    padding: 9px 12px; margin: 0 2px 14px;
+  }
+  #club-banner[hidden] { display: none; }
+  #club-banner .cb-match { display: block; font-weight: 700; margin-top: 2px; }
+  #club-banner:focus-visible { outline: 3px solid var(--gold); }
   .pseudo-card button {
     font-family: var(--font-display); font-size: 14px;
     color: var(--on-dark);
@@ -882,6 +899,8 @@
     <button class="mode-tab" id="tab-marathon" role="tab" aria-selected="false">🏆 Marathon</button>
     <button class="mode-tab" id="tab-duel" role="tab" aria-selected="false">⚔️ Duel</button>
   </div>
+
+  <button id="club-banner" type="button" hidden></button>
 
   <details class="rules">
     <summary>Comment jouer ?</summary>
@@ -1027,6 +1046,10 @@
         <div class="ic-why gagne" style="animation-delay:3.4s">🎉 Trouvé en 3 essais !</div>
       </div>
       <p class="ic-legend"><span class="lg g"></span> exact · <span class="lg y"></span> proche · <span class="lg n"></span> non · ↑↓ le mystère est plus vieux / plus jeune</p>
+      <div class="ic-perso">
+        <input id="intro-pseudo" type="text" maxlength="20" autocomplete="off" placeholder="Ton pseudo (classement &amp; duels)">
+        <select id="intro-club"><option value="">⭐ Ton club de cœur — optionnel</option></select>
+      </div>
       <button id="btn-intro-go">C'EST PARTI</button>
       <button id="btn-intro-rules" class="btn-ghost" type="button">Toutes les règles</button>
     </div>
@@ -1040,6 +1063,14 @@
     </div>
   </div>
 
+  <div id="club-dialog" hidden>
+    <div class="pseudo-card">
+      <h3>⭐ Ton club de cœur</h3>
+      <select id="club-select"></select>
+      <button id="btn-club-ok">C'EST LE MIEN</button>
+    </div>
+  </div>
+
   <footer>
     Effectifs saison 2026-27 · <span id="data-count"></span> joueurs à proposer en essai<br>
     Le joueur mystère est toujours une star connue — sauf en Difficile, Élite et Duel expert<br>
@@ -1047,8 +1078,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=14"></script>
-<script src="config.js?v=14"></script>
-<script src="app.js?v=14"></script>
+<script src="data.js?v=15"></script>
+<script src="config.js?v=15"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>
