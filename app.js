@@ -210,7 +210,9 @@
    'classement', 'classement-list', 'classement-note', 'btn-refresh-classement',
    'pseudo-dialog', 'pseudo-input', 'btn-pseudo-ok', 'storage-warn', 'data-count',
    'dp-note', 'intro-dialog', 'btn-intro-go', 'btn-intro-rules',
-   'intro-pseudo', 'intro-club', 'club-banner', 'club-dialog', 'club-select', 'btn-club-ok'].forEach(function (id) {
+   'intro-pseudo', 'intro-club', 'club-banner', 'club-dialog', 'club-select', 'btn-club-ok',
+   'salon-zone', 'salon-boards', 'btn-salon-new', 'salon-dialog', 'salon-dlg-titre', 'salon-nom',
+   'salon-pseudo', 'salon-num', 'salon-couleurs', 'salon-avatar', 'btn-salon-ok', 'btn-salon-annuler'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
   el['data-count'].textContent = DATA.length.toLocaleString('fr-BE');
@@ -507,6 +509,164 @@
   if (LB) setInterval(function () {
     if (MODE === 'marathon' && document.visibilityState === 'visible') refreshClassement();
   }, 180000);
+
+  // ── Salons privés : ligue asynchrone entre amis, appuyée sur le marathon classé ──
+  // Identité par navigateur (uid) : deux « Karim » de salons différents ne se mélangent jamais.
+  var UID = load('jm-uid', '');
+  if (!UID) {
+    UID = Array.from({ length: 16 }, function () { return '0123456789abcdef'[Math.floor(Math.random() * 16)]; }).join('');
+    save('jm-uid', UID);
+  }
+  var MAILLOT_COULEURS = [
+    ['#c8342c', '#971f19', '#fdfaf2'], ['#2456a8', '#173a75', '#fdfaf2'],
+    ['#2c7a44', '#1c5530', '#fdfaf2'], ['#211e19', '#c9a227', '#f5d9a8'],
+    ['#fdfaf2', '#c8342c', '#211e19'], ['#e2a91f', '#211e19', '#211e19'],
+    ['#6a2c8f', '#471b62', '#fdfaf2'], ['#12a5b8', '#0c7180', '#fdfaf2']
+  ];
+  var avNum = parseInt(load('jm-maillot', '10'), 10) || 10;
+  var avCol = parseInt(load('jm-couleur', '0'), 10) || 0;
+  function avatarSVG(nom, num, cIdx) {
+    var c = MAILLOT_COULEURS[cIdx % MAILLOT_COULEURS.length] || MAILLOT_COULEURS[0];
+    var floc = esc(String(nom || '').toUpperCase().slice(0, 10));
+    return '<svg viewBox="0 0 140 122" aria-hidden="true">' +
+      '<path d="M38 16 L8 36 L22 58 L36 48 Z" fill="' + c[1] + '" stroke="#22251f" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M102 16 L132 36 L118 58 L104 48 Z" fill="' + c[1] + '" stroke="#22251f" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M38 16 L54 12 Q70 30 86 12 L102 16 L104 48 L102 116 L38 116 L36 48 Z" fill="' + c[0] + '" stroke="#22251f" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M54 12 Q70 30 86 12" fill="none" stroke="' + c[1] + '" stroke-width="5"/>' +
+      '<text x="70" y="52" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="15" letter-spacing="1" fill="' + c[2] + '">' + floc + '</text>' +
+      '<text x="70" y="98" text-anchor="middle" font-family="Alfa Slab One, Rockwell, serif" font-size="40" fill="' + c[2] + '" stroke="#22251f" stroke-width="1.2" paint-order="stroke">' + (num || '') + '</text>' +
+      '</svg>';
+  }
+  var SALONS = loadJSON('jm-salons', []); // [{code, nom}]
+  function rpc(fn, args) {
+    return LB.post('/rest/v1/rpc/' + fn, args).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error(t.slice(0, 120)); });
+      return r.json().catch(function () { return null; });
+    });
+  }
+  function salonLien(code) { return SITE + '#s=' + code; }
+  function salonMsg(s) {
+    return '🏟️ Rejoins notre salon « ' + s.nom + ' » sur le Joueur Mystère — un marathon par jour, classement entre nous : ' + salonLien(s.code);
+  }
+  // Dialogue création / adhésion (en DOM, jamais de modal natif)
+  var salonDlgMode = null; // 'creer' | {code}
+  function majAvatarApercu() {
+    el['salon-avatar'].innerHTML = avatarSVG(el['salon-pseudo'].value || pseudo || 'TOI', parseInt(el['salon-num'].value, 10) || avNum, avCol);
+  }
+  function ouvrirSalonDialog(mode, titre) {
+    salonDlgMode = mode;
+    el['salon-dlg-titre'].textContent = titre;
+    el['salon-nom'].hidden = mode !== 'creer';
+    el['salon-pseudo'].value = pseudo || '';
+    el['salon-num'].value = avNum;
+    el['salon-couleurs'].innerHTML = MAILLOT_COULEURS.map(function (c, i) {
+      return '<button type="button" role="radio" aria-checked="' + (i === avCol) + '" aria-label="Couleur ' + (i + 1) + '" style="background:linear-gradient(160deg,' + c[0] + ' 55%,' + c[1] + ')"></button>';
+    }).join('');
+    [].forEach.call(el['salon-couleurs'].children, function (b, i) {
+      b.addEventListener('click', function () {
+        avCol = i;
+        [].forEach.call(el['salon-couleurs'].children, function (x, j) { x.setAttribute('aria-checked', String(j === i)); });
+        majAvatarApercu();
+      });
+    });
+    majAvatarApercu();
+    el['salon-dialog'].hidden = false;
+    (mode === 'creer' ? el['salon-nom'] : el['salon-pseudo']).focus();
+  }
+  el['salon-pseudo'].addEventListener('input', majAvatarApercu);
+  el['salon-num'].addEventListener('input', majAvatarApercu);
+  el['btn-salon-annuler'].addEventListener('click', function () { el['salon-dialog'].hidden = true; });
+  el['btn-salon-ok'].addEventListener('click', function () {
+    var p = el['salon-pseudo'].value.replace(/[<>&"']/g, '').trim().slice(0, 20);
+    if (!p) { el['salon-pseudo'].focus(); return; }
+    var n = Math.min(99, Math.max(1, parseInt(el['salon-num'].value, 10) || 10));
+    pseudo = p; save('jm-pseudo', p);
+    avNum = n; save('jm-maillot', String(n)); save('jm-couleur', String(avCol));
+    var boutOK = el['btn-salon-ok'];
+    boutOK.disabled = true;
+    var fini = function () { boutOK.disabled = false; el['salon-dialog'].hidden = true; renderSalons(); };
+    if (salonDlgMode === 'creer') {
+      var nomS = el['salon-nom'].value.replace(/[<>&"']/g, '').trim().slice(0, 30);
+      if (!nomS) { el['salon-nom'].focus(); boutOK.disabled = false; return; }
+      rpc('salon_creer', { p_nom: nomS, p_uid: UID, p_pseudo: p, p_maillot: n, p_couleur: avCol })
+        .then(function (code) {
+          SALONS.push({ code: code, nom: nomS }); save('jm-salons', JSON.stringify(SALONS));
+          publierScoreSalons();
+          fini();
+        })
+        .catch(function () { boutOK.disabled = false; el['copy-feedback'].textContent = ''; alerteSalon('Création impossible — réessaie dans un instant.'); });
+    } else {
+      var code = salonDlgMode.code;
+      rpc('salon_rejoindre', { p_code: code, p_uid: UID, p_pseudo: p, p_maillot: n, p_couleur: avCol })
+        .then(function (nomS) {
+          if (!SALONS.some(function (s) { return s.code === code; })) {
+            SALONS.push({ code: code, nom: nomS }); save('jm-salons', JSON.stringify(SALONS));
+          }
+          publierScoreSalons();
+          fini();
+        })
+        .catch(function () { boutOK.disabled = false; alerteSalon('Salon introuvable — vérifie le lien.'); });
+    }
+  });
+  function alerteSalon(msg) {
+    var z = el['salon-boards'];
+    z.insertAdjacentHTML('afterbegin', '<p class="sb-alerte" style="color:var(--red-deep);font-weight:700;font-size:13px;margin-top:8px">' + esc(msg) + '</p>');
+    setTimeout(function () { var a = z.querySelector('.sb-alerte'); if (a) a.remove(); }, 4000);
+  }
+  // Publie la série classée du jour dans tous mes salons (y compris si on rejoint après avoir joué)
+  function publierScoreSalons() {
+    if (!LB || !SALONS.length || !mday.done) return;
+    SALONS.forEach(function (s) {
+      rpc('salon_score', { p_code: s.code, p_uid: UID, p_day: DAY, p_serie: mday.serie || 0 }).catch(function () {});
+    });
+  }
+  function renderSalons() {
+    if (!LB) { el['salon-zone'].hidden = true; return; }
+    var z = el['salon-boards'];
+    if (!SALONS.length) { z.innerHTML = ''; return; }
+    z.innerHTML = SALONS.map(function (s) { return '<div class="salon-board" data-code="' + esc(s.code) + '"><h4>🏟️ ' + esc(s.nom) + '</h4><p class="sb-code">…</p></div>'; }).join('');
+    SALONS.forEach(function (s) {
+      rpc('get_salon', { p_code: s.code, p_day: DAY }).then(function (d) {
+        var b = z.querySelector('[data-code="' + s.code + '"]');
+        if (!b || !d || !d.nom) return;
+        var rows = (d.membres || []).map(function (m, i) {
+          var moi = m.pseudo === pseudo;
+          return '<li' + (moi ? ' class="me"' : '') + '>' +
+            '<span class="medal">' + (['🥇', '🥈', '🥉'][i] || (i + 1) + '.') + '</span>' +
+            '<span class="sb-avatar">' + avatarSVG('', m.maillot, m.couleur) + '</span>' +
+            '<span class="sb-nom">' + esc(m.pseudo) + '</span>' +
+            '<span class="sb-jour">' + (m.jour == null ? 'pas encore joué' : 'auj. : ' + m.jour) + '</span>' +
+            '<span class="sb-total">' + m.total + '</span></li>';
+        }).join('');
+        b.innerHTML = '<h4>🏟️ ' + esc(d.nom) + '</h4>' +
+          '<p class="sb-code">CODE ' + esc(s.code) + ' · total des séries du marathon classé</p>' +
+          '<ol>' + rows + '</ol>' +
+          '<div class="sb-lien"><input readonly value="' + salonLien(s.code) + '" aria-label="Lien du salon">' +
+          '<button type="button" class="sb-copier">📋</button>' +
+          '<a href="https://wa.me/?text=' + encodeURIComponent(salonMsg(s)) + '" target="_blank" rel="noopener">🟢 WhatsApp</a></div>' +
+          '<div class="sb-actions"><button type="button" class="sb-refresh">↻ Actualiser</button>' +
+          '<button type="button" class="sb-quitter">Quitter ce salon</button></div>';
+        b.querySelector('.sb-lien input').addEventListener('focus', function () { this.select(); });
+        b.querySelector('.sb-copier').addEventListener('click', function () { copyToClipboard(salonMsg(s), '✓ Lien du salon copié !'); });
+        b.querySelector('.sb-refresh').addEventListener('click', renderSalons);
+        b.querySelector('.sb-quitter').addEventListener('click', function () {
+          SALONS = SALONS.filter(function (x) { return x.code !== s.code; });
+          save('jm-salons', JSON.stringify(SALONS));
+          renderSalons();
+        });
+      }).catch(function () {});
+    });
+  }
+  el['btn-salon-new'].addEventListener('click', function () { ouvrirSalonDialog('creer', '🏟️ Nouveau salon'); });
+  renderSalons();
+  // Arrivée par lien de salon : #s=CODE → proposer de rejoindre
+  (function salonDepuisLien() {
+    var m = location.hash.match(/^#s=([A-Z0-9]{6})$/i);
+    if (!m || !LB) return;
+    var code = m[1].toUpperCase();
+    if (SALONS.some(function (s) { return s.code === code; })) return;
+    ouvrirSalonDialog({ code: code }, '🏟️ Rejoindre le salon ' + code);
+  })();
 
   // ── Mode courant ──
   var MODE = 'jour';
@@ -1008,6 +1168,7 @@
       mday.done = true;
       save('jm-mday-' + DAY, JSON.stringify(mday));
       submitMarathonScore(s);
+      publierScoreSalons(); // les salons reçoivent aussi les séries de 0 — avoir joué compte
     }
     newPracticeRun();
     renderPodium();

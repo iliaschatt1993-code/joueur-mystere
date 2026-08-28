@@ -765,6 +765,49 @@
   #club-banner[hidden] { display: none; }
   #club-banner .cb-match { display: block; font-weight: 700; margin-top: 2px; }
   #club-banner:focus-visible { outline: 3px solid var(--gold); }
+  /* ── Salons privés : le vestiaire du groupe ── */
+  #salon-zone { margin-top: 18px; padding-top: 14px; border-top: 2px dashed var(--line); }
+  .salon-board {
+    background: var(--paper); border: 2.5px solid var(--line); border-radius: 5px;
+    box-shadow: var(--shadow-cell); padding: 12px; margin-top: 12px; text-align: left;
+  }
+  .salon-board h4 { font-family: var(--font-display); font-weight: 400; font-size: 16px; margin-bottom: 2px; }
+  .salon-board .sb-code { font-family: var(--font-cond); font-weight: 600; font-size: 13px; opacity: .7; letter-spacing: .1em; }
+  .salon-board ol { list-style: none; margin: 10px 0 8px; }
+  .salon-board li { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(128,120,100,.35); }
+  .salon-board li.me { background: var(--gold-pale); border-radius: 4px; padding-left: 4px; padding-right: 4px; }
+  .salon-board .sb-avatar svg { width: 30px; height: 26px; display: block; }
+  .salon-board .sb-nom { flex: 1; font-weight: 700; }
+  .salon-board .sb-jour { font-family: var(--font-cond); font-weight: 600; font-size: 13px; opacity: .8; }
+  .salon-board .sb-total { font-family: var(--font-display); font-size: 16px; min-width: 34px; text-align: right; }
+  .salon-board .sb-lien { display: flex; gap: 6px; margin-top: 6px; }
+  .salon-board .sb-lien input {
+    flex: 1; min-width: 0; font-family: var(--font-cond); font-size: 13px; font-weight: 600;
+    padding: 7px 9px; border: 2px solid var(--line); border-radius: 4px; background: var(--sticker-border);
+  }
+  .salon-board .sb-lien button, .salon-board .sb-lien a {
+    font-family: var(--font-cond); font-weight: 700; font-size: 13px; text-decoration: none; text-align: center;
+    padding: 7px 10px; border: 2px solid var(--line); border-radius: 4px;
+    background: var(--paper); color: var(--text); cursor: pointer; box-shadow: 1.5px 2px 0 rgba(33,30,25,.16);
+  }
+  .salon-board .sb-actions { margin-top: 8px; display: flex; gap: 10px; }
+  .salon-board .sb-actions button {
+    all: unset; cursor: pointer; font-size: 12px; font-weight: 700; opacity: .6; text-decoration: underline;
+  }
+  /* Avatar : maillot floqué pseudo + numéro */
+  .flocage-row { display: flex; gap: 12px; align-items: center; text-align: left; }
+  .flocage-apercu svg { width: 92px; height: 80px; display: block; }
+  .flocage-opts { flex: 1; display: grid; gap: 8px; }
+  .flocage-opts input[type="number"] {
+    width: 90px; font-family: var(--font-display); font-size: 20px; text-align: center;
+    padding: 6px 8px; border: 2.5px solid var(--line); border-radius: 5px; background: var(--sticker-border);
+  }
+  #salon-couleurs { display: flex; gap: 6px; flex-wrap: wrap; }
+  #salon-couleurs button {
+    width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--line);
+    cursor: pointer; padding: 0; box-shadow: 1.5px 2px 0 rgba(33,30,25,.2);
+  }
+  #salon-couleurs button[aria-checked="true"] { outline: 3px solid var(--gold); outline-offset: 1px; }
   .pseudo-card button {
     font-family: var(--font-display); font-size: 14px;
     color: var(--on-dark);
@@ -897,7 +940,7 @@
   <div id="modes" role="tablist" aria-label="Mode de jeu">
     <button class="mode-tab" id="tab-jour" role="tab" aria-selected="true">☀️ Joueur du jour</button>
     <button class="mode-tab" id="tab-marathon" role="tab" aria-selected="false">🏆 Marathon</button>
-    <button class="mode-tab" id="tab-duel" role="tab" aria-selected="false">⚔️ Duel</button>
+    <button class="mode-tab" id="tab-duel" role="tab" aria-selected="false">⚔️ Entre amis</button>
   </div>
 
   <button id="club-banner" type="button" hidden></button>
@@ -958,6 +1001,14 @@
     </div>
     <p style="font-size:12px;opacity:.65">Expert : le mystère peut être n'importe lequel des ~4 700 joueurs —
     le championnat est offert dès 2 essais.</p>
+
+    <div id="salon-zone">
+      <p>🏟️ <strong>Le salon privé</strong> : crée ton vestiaire, envoie le lien aux potes.
+      Chacun joue le <em>marathon classé du jour</em> quand il veut — le classement du groupe
+      se met à jour tout seul, jour après jour.</p>
+      <div class="di-btns"><button id="btn-salon-new">🏟️ CRÉER UN SALON</button></div>
+      <div id="salon-boards"></div>
+    </div>
   </div>
 
   <div id="start-hint"></div>
@@ -1071,6 +1122,23 @@
     </div>
   </div>
 
+  <div id="salon-dialog" hidden>
+    <div class="pseudo-card">
+      <h3 id="salon-dlg-titre">🏟️ Nouveau salon</h3>
+      <input id="salon-nom" type="text" maxlength="30" autocomplete="off" placeholder="Nom du salon (ex. : Les potes du foot)">
+      <input id="salon-pseudo" type="text" maxlength="20" autocomplete="off" placeholder="Ton pseudo">
+      <div class="flocage-row">
+        <div id="salon-avatar" class="flocage-apercu" aria-hidden="true"></div>
+        <div class="flocage-opts">
+          <input id="salon-num" type="number" min="1" max="99" inputmode="numeric" aria-label="Numéro de maillot">
+          <div id="salon-couleurs" role="radiogroup" aria-label="Couleur du maillot"></div>
+        </div>
+      </div>
+      <button id="btn-salon-ok">ENTRER SUR LE TERRAIN</button>
+      <button id="btn-salon-annuler" class="btn-ghost" type="button">Annuler</button>
+    </div>
+  </div>
+
   <footer>
     Effectifs saison 2026-27 · <span id="data-count"></span> joueurs à proposer en essai<br>
     Le joueur mystère est toujours une star connue — sauf en Difficile, Élite et Duel expert<br>
@@ -1078,8 +1146,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=15"></script>
-<script src="config.js?v=15"></script>
-<script src="app.js?v=15"></script>
+<script src="data.js?v=16"></script>
+<script src="config.js?v=16"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
