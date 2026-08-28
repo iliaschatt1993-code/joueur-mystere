@@ -1161,6 +1161,19 @@
     box-shadow: 0 0 18px rgba(201,162,39,.55), var(--shadow-hard);
   }
   #pack-card .pc-new { font-family: var(--font-cond); font-weight: 700; font-size: 13px; margin-top: 8px; text-align: center; }
+  /* ⚪ Pack argent : 3 cartes face visible, on en garde une */
+  .pack-choix { display: flex; gap: 8px; justify-content: center; align-items: stretch; flex-wrap: wrap; margin-top: 8px; }
+  .pc-pick {
+    background: none; border: none; padding: 0; cursor: pointer;
+    border-radius: 8px; max-width: 32%;
+  }
+  .pc-pick .pack-carte { padding: 12px 8px 10px; height: 100%; }
+  .pc-pick .pack-carte svg { width: 54px; }
+  .pc-pick .pack-carte b { font-size: 14px; }
+  .pc-pick .pack-carte .pc-club { font-size: 11px; }
+  .pc-pick .pack-carte .pc-note { font-size: 16px; top: 3px; right: 7px; }
+  .pc-pick:hover .pack-carte, .pc-pick:focus-visible .pack-carte { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--gold), var(--shadow-hard); }
+  .pc-pick:focus-visible { outline: none; }
 </style>
 </head>
 <body>
@@ -1189,13 +1202,15 @@
     Postes : DC déf. central, LD/LG latéraux, MDC milieu déf., MC milieu, MO milieu off., AD/AG ailiers, BU avant-centre.</p>
     <p><strong>☀️ Joueur du jour</strong> : le même joueur pour tout le monde, un nouveau chaque nuit à minuit, chronométré.
     <strong>🏆 La Coupe</strong> (le mode principal) : un tournoi à élimination directe — 5 mystères (16es → finale) avec
-    un budget de <strong>18 essais pour tout le parcours</strong>, sans chrono. Les adversaires sont
-    <strong>de plus en plus obscurs</strong> (16es : cote 84+ ; finale : cote 66-70) — mais plus le mystère est pointu,
-    plus le jeu t'aide : championnat puis club offerts d'office, initiales plus tôt, et même la moitié du nom pour les
-    plus confidentiels. Éliminé ou champion, la coupe se termine par une <strong>note sur 100</strong>… et un
-    <strong>📦 pack à ouvrir</strong> : une carte d'album tirée au sort, jamais en double — plus tu es allé loin,
-    meilleures sont les probabilités (💎 légende : 0,2 % en pack 16es, 15 % en pack champion ; et dans une bande,
-    chaque point de cote rend la carte ~1,7× plus rare — un 91 se mérite). L'album ne se remplit que comme ça.
+    un budget de <strong>20 essais pour tout le parcours</strong>, sans chrono. Le tournoi <strong>monte vers la
+    gloire</strong> : des joueurs confirmés d'abord (indices renforcés au fil des tours — championnat, club, initiales,
+    puis le nom qui se dévoile lettre par lettre), et en finale, un <strong>💎 boss légendaire</strong> que tout le monde
+    connaît — elle se gagne avec les essais qu'on a su économiser. Chaque mystère deviné <strong>colle sa vignette
+    dans l'album</strong>, même si la run s'arrête après. Éliminé ou champion, la coupe se termine par une
+    <strong>note sur 100</strong>… et un <strong>📦 pack à ouvrir</strong>, jamais en double : un pack ⚪ argent se
+    révèle en <strong>3 cartes — tu en gardes une</strong> ; plus tu es allé loin, meilleures sont les chances d'or ou
+    de légende (💎 : 1 % en pack 16es, 25 % en pack champion — et dans une bande, chaque point de cote rend la carte
+    ~1,7× plus rare : un 91 se mérite). Après 3 packs argent d'affilée, l'or est garanti.
     <strong>⏱️ Marathon</strong> : d'abord la tentative <strong>classée</strong> du jour — même séquence de stars pour tout le monde,
     ⏳ 120 s par joueur (le chrono, c'est l'anti-triche du classement), la série grimpe jusqu'au premier raté.
     Ensuite, <strong>entraînement libre</strong> en 4 difficultés : <strong>Facile</strong> (stars, sans chrono),
@@ -1212,7 +1227,8 @@
     calculée d'après les flèches. Un coup d'œil suffit, plus besoin de relire toute la grille.</p>
     <p>📇 <strong>La base</strong> : ~16 000 joueurs de 45 championnats (notes officielles EA FC), tous proposables
     comme essais pour récolter des indices. Au Joueur du jour et au Marathon, le mystère est <strong>toujours une
-    star</strong> ; à la Coupe, c'est une carte cotée de l'album — et sa rareté est annoncée. La recherche ne répond
+    star</strong> ; à la Coupe, c'est une carte de l'album (486 joueurs confirmés) — et sa bande de rareté
+    (💎/🟡/⚪) est annoncée dès le départ. La recherche ne répond
     qu'aux <strong>noms de joueurs</strong> : inutile de taper un club ou un pays pour lister des candidats.</p>
   </details>
 
@@ -1245,19 +1261,21 @@
 
   <div id="coupe-intro" hidden>
     <p>🏆 <strong>La Coupe</strong> : 5 joueurs mystères à deviner d'affilée — des 16es à la finale —
-    avec un budget de <strong>18 essais pour tout le tournoi</strong>. Les adversaires sont de plus en plus
-    pointus (leur cote est annoncée, les indices s'adaptent), et chaque essai économisé compte.</p>
-    <p>📦 Au bout, quoi qu'il arrive : <strong>un pack à ouvrir</strong> — une nouvelle carte pour ton album,
-    jamais de doublon. Plus tu vas loin, meilleures sont tes chances de tirer une carte 🟡 or… voire l'une des
-    <strong>49 💎 LÉGENDES</strong>. Un 91 comme Mbappé ? Rarissime, même en pack champion.</p>
+    avec un budget de <strong>20 essais pour tout le tournoi</strong>. Les indices s'adaptent à chaque tour,
+    chaque essai économisé compte… et en finale t'attend un <strong>💎 boss légendaire</strong> que tout
+    le monde connaît.</p>
+    <p>📔 Chaque mystère deviné <strong>colle sa vignette dans l'album</strong>. Et au bout, quoi qu'il
+    arrive : <strong>un pack à ouvrir</strong>, jamais de doublon — un pack ⚪ argent se révèle en
+    <strong>3 cartes, tu en gardes une</strong>. Plus tu vas loin, meilleures sont tes chances d'🟡 or…
+    voire l'une des <strong>49 💎 LÉGENDES</strong>. Un 91 comme Mbappé ? Rarissime, même en pack champion.</p>
     <p class="ci-tour">16ES › 8ES › QUARTS › DEMI › FINALE</p>
     <div id="coupe-palmares"></div>
     <div class="di-btns">
       <button id="btn-coupe-new" type="button">🏆 LANCER LA COUPE</button>
       <button id="btn-album" type="button">📔 MON ALBUM</button>
     </div>
-    <p style="font-size:12px;opacity:.65">L'album (1 346 cartes) ne se remplit qu'en ouvrant des packs —
-    une Coupe jouée, un pack ouvert.</p>
+    <p style="font-size:12px;opacity:.65">L'album : 486 cartes, du joueur confirmé à la légende —
+    chaque carte est quelqu'un.</p>
   </div>
 
   <div id="duel-intro" hidden>
@@ -1406,7 +1424,7 @@
       <button type="button" data-g="champ" aria-pressed="true">PAR CHAMPIONNAT</button>
       <button type="button" data-g="pays" aria-pressed="false">PAR PAYS</button>
     </div>
-    <p class="alb-note">Une Coupe jouée = un 📦 pack ouvert = une nouvelle vignette ici — cadres 🟤 bronze,
+    <p class="alb-note">Chaque mystère deviné et chaque 📦 pack ouvert collent une vignette ici — cadres
     ⚪ argent, 🟡 or et 💎 légende (bord doré animé). Les maillots gris « ? » restent à découvrir.</p>
     <div id="album-grid"></div>
   </div>
@@ -1435,8 +1453,8 @@
   </footer>
 </div>
 
-<script src="data.js?v=19"></script>
-<script src="config.js?v=19"></script>
-<script src="app.js?v=19"></script>
+<script src="data.js?v=20"></script>
+<script src="config.js?v=20"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>

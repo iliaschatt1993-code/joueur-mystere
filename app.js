@@ -204,12 +204,15 @@
   // myst\u00e8re jouable (avec les coups de pouce) ; en-dessous, on n'est que devinable.
   function noteOf(p) { return p[9] || 0; }
   var BANDS = {
-    legende: { nom: 'L\u00c9GENDE', icon: '\ud83d\udc8e' },
-    or:      { nom: 'OR',      icon: '\ud83d\udfe1' },
-    argent:  { nom: 'ARGENT',  icon: '\u26aa' },
-    bronze:  { nom: 'BRONZE',  icon: '\ud83d\udfe4' }
+    legende: { nom: 'L\u00c9GENDE', icon: '\ud83d\udc8e', adj: 'l\u00e9gendaire' },
+    or:      { nom: 'OR',      icon: '\ud83d\udfe1', adj: 'r\u00e9put\u00e9' },
+    argent:  { nom: 'ARGENT',  icon: '\u26aa', adj: 'confirm\u00e9' },
+    bronze:  { nom: 'BRONZE',  icon: '\ud83d\udfe4', adj: 'confidentiel' }
   };
-  var NOTE_LEGENDE = 87, NOTE_OR = 84, NOTE_ARGENT = 80, NOTE_ALBUM = 76;
+  // Album \u00e0 partir de 80 (v13) : 486 cartes, toutes reconnaissables \u2014 une carte
+  // qu'on ne reconna\u00eet pas n'est pas une r\u00e9compense. Les 76-79 restent devinables
+  // comme essais, ils sortent juste de la collection.
+  var NOTE_LEGENDE = 87, NOTE_OR = 84, NOTE_ARGENT = 80, NOTE_ALBUM = 80;
   function bandOf(p) {
     var n = noteOf(p);
     return n >= NOTE_LEGENDE ? 'legende' : n >= NOTE_OR ? 'or' : n >= NOTE_ARGENT ? 'argent' : 'bronze';
@@ -373,7 +376,7 @@
   // La partie a un ARC : on n'y « meurt » pas, on est éliminé à un stade, et toute
   // run — même perdue — se termine par une note sur 100. C'est ce qui donne envie
   // de relancer (« j'étais en demi ! »), là où la survie infinie finit toujours mal.
-  var COUPE_BUDGET = 18; // pour les 5 tours : la vraie ressource du mode
+  var COUPE_BUDGET = 20; // pour les 5 tours : la vraie ressource du mode
   var COUPE_ROUNDS = [
     { label: '16es de finale', court: '16ES' },
     { label: '8es de finale', court: '8ES' },
@@ -393,15 +396,18 @@
   var coupeStats = loadJSON('jm-coupe-stats', { runs: 0, trophees: 0, best: 0 });
   var album = loadJSON('jm-album', {}); // { nom du joueur: date de la 1re capture }
   var albGroup = load('jm-alb-group', 'champ');
-  // Base regénérée entre deux visites : une cible disparue invaliderait la run
-  if (coupe && (!coupe.targets || coupe.targets.some(function (n) { return !findPlayer(n); }))) coupe = null;
+  // Base regénérée entre deux visites : une cible disparue invaliderait la run.
+  // Et une run d'avant la refonte v13 (courbe, budget, packs) repart de zéro.
+  if (coupe && (coupe.v !== 13 || !coupe.targets || coupe.targets.some(function (n) { return !findPlayer(n); }))) coupe = null;
   function saveCoupe() { save('jm-coupe', JSON.stringify(coupe)); }
   function coupeTarget() { return findPlayer(coupe.targets[Math.min(coupe.round, 4)]); }
   function coupeRoundPhrase(i) { return (i >= 3 ? 'la ' : 'les ') + COUPE_ROUNDS[i].label; }
-  // ⚔️ Les adversaires du tournoi : de plus en plus OBSCURS au fil des tours
-  // (la note EA mesure l'obscurité). 16es = stars, finale = héros inconnus —
-  // les indices se renforcent en face (voir aides()). ~7 700 mystères possibles.
-  var COUPE_TOUR_NOTES = [[84, 99], [80, 83], [76, 79], [71, 75], [66, 70]];
+  // ⚔️ v13 : la Coupe MONTE vers la gloire. Tous les mystères viennent de
+  // l'album (≥80) : chaque tour gagné colle une vignette. 16es = or connus,
+  // 8es/quarts = argent, demi = tout l'argent avec des aides réduites (le test
+  // passe par les aides, plus par l'obscurité), finale = boss 💎 légende que
+  // tout le monde connaît — elle se gagne au budget restant, pas à l'érudition.
+  var COUPE_TOUR_NOTES = [[84, 86], [82, 83], [80, 81], [80, 83], [87, 99]];
   var TOUR_IDX = COUPE_TOUR_NOTES.map(function (mm) {
     var out = [];
     for (var i = 0; i < DATA.length; i++) {
@@ -424,48 +430,66 @@
     for (var r = 0; r < 5; r++) picks.push(drawCoupeTarget(r, picks));
     coupeRecent = coupeRecent.concat(picks).slice(-60);
     save('jm-coupe-recent', JSON.stringify(coupeRecent));
-    coupe = { targets: picks, round: 0, used: 0, g: [], done: false, won: false };
+    coupe = { v: 13, targets: picks, round: 0, used: 0, g: [], done: false, won: false };
     saveCoupe();
   }
   // 📦 Le PACK de fin de run — la vraie récompense (économie Ultimate Team,
   // sans doublons) : plus tu vas loin, meilleures sont les probabilités de
   // bande ; et dans une bande, chaque point de note divise la chance par ~1,7
   // (un 91 est ~8× plus rare qu'un 87 : Mbappé et Messi se méritent).
-  var PACK_P = [ // [bronze, argent, or, legende] — index = stade atteint (5 = champion)
-    [0.85, 0.13, 0.018, 0.002],
-    [0.72, 0.22, 0.05, 0.01],
-    [0.60, 0.30, 0.085, 0.015],
-    [0.45, 0.38, 0.14, 0.03],
-    [0.30, 0.42, 0.22, 0.06],
-    [0.10, 0.40, 0.35, 0.15]
+  // v13 : 3 bandes (l'album démarre à l'argent). Un pack argent se révèle en
+  // « choix 1 parmi 3 » : c'est le joueur qui sait quelle carte lui fait envie.
+  var PACK_P = [ // [argent, or, legende] — index = stade atteint (5 = champion)
+    [0.90, 0.09, 0.01],
+    [0.84, 0.13, 0.03],
+    [0.75, 0.20, 0.05],
+    [0.62, 0.30, 0.08],
+    [0.48, 0.40, 0.12],
+    [0.25, 0.50, 0.25]
   ];
-  var PACK_BANDS = ['bronze', 'argent', 'or', 'legende'];
-  var BAND_BASE = { bronze: NOTE_ALBUM, argent: NOTE_ARGENT, or: NOTE_OR, legende: NOTE_LEGENDE };
+  var PACK_BANDS = ['argent', 'or', 'legende'];
+  var BAND_BASE = { argent: NOTE_ARGENT, or: NOTE_OR, legende: NOTE_LEGENDE };
   function packManquantes(band) {
     return BAND_IDX[band].filter(function (i) {
       return !album[DATA[i][0]] && findPlayer(DATA[i][0]) === DATA[i];
     });
   }
-  function drawPack(stade) {
+  function drawFromBand(bi, excl) {
+    var pool = packManquantes(PACK_BANDS[bi]).filter(function (i) { return excl.indexOf(DATA[i][0]) === -1; });
+    if (!pool.length) return null;
+    var total = 0, w = pool.map(function (i) {
+      var wi = Math.pow(1.7, -(noteOf(DATA[i]) - BAND_BASE[PACK_BANDS[bi]]));
+      total += wi;
+      return wi;
+    });
+    var rr = Math.random() * total;
+    for (var k = 0; k < pool.length; k++) { rr -= w[k]; if (rr < 0) return DATA[pool[k]][0]; }
+    return DATA[pool[pool.length - 1]][0];
+  }
+  // Renvoie { band, names } — 3 noms pour un pack argent (choix), 1 sinon.
+  // minBi = pitié : 3 packs argent d'affilée → le 4e est or garanti.
+  function drawPackNames(stade, minBi) {
     var p = PACK_P[Math.min(stade, 5)];
     var r = Math.random(), bi = 0;
-    for (var i = 0; i < 4; i++) { r -= p[i]; if (r < 0) { bi = i; break; } }
-    // bande épuisée → on monte (jamais de déclassement : que des bonnes surprises)
-    for (var j = bi; j < 4; j++) {
-      var pool = packManquantes(PACK_BANDS[j]);
-      if (!pool.length) continue;
-      var total = 0, w = pool.map(function (i) {
-        var wi = Math.pow(1.7, -(noteOf(DATA[i]) - BAND_BASE[PACK_BANDS[j]]));
-        total += wi;
-        return wi;
-      });
-      var rr = Math.random() * total;
-      for (var k = 0; k < pool.length; k++) { rr -= w[k]; if (rr < 0) return DATA[pool[k]][0]; }
-      return DATA[pool[pool.length - 1]][0];
-    }
-    for (var j2 = bi - 1; j2 >= 0; j2--) { // tout le haut est plein : on redescend
-      var pool2 = packManquantes(PACK_BANDS[j2]);
-      if (pool2.length) return DATA[pool2[Math.floor(Math.random() * pool2.length)]][0];
+    for (var i = 0; i < 3; i++) { r -= p[i]; if (r < 0) { bi = i; break; } }
+    if (bi < minBi) bi = minBi;
+    // bande épuisée → on monte (jamais de déclassement) ; haut plein → on redescend
+    var ordre = [];
+    for (var j = bi; j < 3; j++) ordre.push(j);
+    for (var j2 = bi - 1; j2 >= 0; j2--) ordre.push(j2);
+    for (var o = 0; o < ordre.length; o++) {
+      var b = ordre[o];
+      var n1 = drawFromBand(b, []);
+      if (!n1) continue;
+      if (b === 0) {
+        var names = [n1];
+        for (var c = 0; c < 2; c++) {
+          var nm = drawFromBand(0, names);
+          if (nm) names.push(nm);
+        }
+        return { band: 0, names: names };
+      }
+      return { band: b, names: [n1] };
     }
     return null; // album complet
   }
@@ -483,13 +507,22 @@
   }
   function coupeNote() {
     // Champion : 85 + bonus d'essais économisés (5 essais parfaits → 100).
-    if (coupe.won) return Math.min(100, 85 + Math.round((COUPE_BUDGET - coupe.used) * 15 / 13));
+    if (coupe.won) return Math.min(100, 85 + (COUPE_BUDGET - coupe.used));
     return COUPE_ELIM_PTS[coupe.round];
   }
   function finalizeCoupe() {
     coupe.note = coupeNote();
-    coupe.pack = drawPack(coupe.won ? 5 : coupe.round); // tiré UNE fois, persisté (pas de re-roll au rechargement)
-    coupe.packOpened = false;
+    // Tiré UNE fois, persisté (pas de re-roll au rechargement). Pitié : après
+    // 3 runs soldées par un pack argent, la bande or est garantie.
+    var minBi = (coupeStats.dry || 0) >= 3 ? 1 : 0;
+    var tirage = drawPackNames(coupe.won ? 5 : coupe.round, minBi);
+    coupe.pack = null; coupe.packChoices = null; coupe.packRevealed = false;
+    coupe.packOpened = !tirage; // album complet : rien à ouvrir
+    if (tirage) {
+      if (tirage.names.length > 1) coupe.packChoices = tirage.names;
+      else coupe.pack = tirage.names[0];
+      coupeStats.dry = tirage.band === 0 ? (coupeStats.dry || 0) + 1 : 0;
+    }
     coupeStats.runs += 1;
     if (coupe.won) coupeStats.trophees += 1;
     coupeStats.best = Math.max(coupeStats.best || 0, coupe.note);
@@ -512,6 +545,9 @@
   }
   function coupeWin() {
     var t = coupeTarget();
+    // v13 : le joueur deviné colle sa vignette — micro-récompense immédiate,
+    // même si la run échoue ensuite (les mystères de Coupe sont tous ≥ album).
+    var vignette = collectPlayer(t);
     coupe.used += coupe.g.length;
     coupe.g = [];
     if (coupe.round >= 4) { // 🏆 finale gagnée
@@ -526,7 +562,8 @@
     if (COUPE_BUDGET - coupe.used <= 0) { coupe.sec = true; endCoupe(); return; } // à sec avant le tour suivant
     saveCoupe();
     confetti(30);
-    coupeBanner('✅ C’était bien ' + t[0] + ' ! 🎯 ' + (COUPE_BUDGET - coupe.used) +
+    coupeBanner('✅ C’était bien ' + t[0] + ' !' + (vignette ? ' 📔 +1 vignette !' : '') +
+      ' 🎯 ' + (COUPE_BUDGET - coupe.used) +
       ' essais restants — direction ' + coupeRoundPhrase(coupe.round) + '…', 2300);
   }
   function endCoupe() {
@@ -548,12 +585,12 @@
   }
   // Un pack tiré mais pas encore ouvert bloque le retour à l'affiche : fermer
   // la page ne doit jamais faire perdre une carte.
-  function packEnAttente() { return coupe && coupe.done && coupe.pack && !coupe.packOpened; }
+  function packEnAttente() { return !!(coupe && coupe.done && (coupe.pack || coupe.packChoices) && !coupe.packOpened); }
   function renderCoupeIntro() {
     var visible = MODE === 'coupe' && (!coupe || coupe.done) && !packEnAttente();
     el['coupe-intro'].hidden = !visible;
     if (!visible) return;
-    el['btn-album'].textContent = '📔 MON ALBUM · ' + albumCount() + '/' + STAR_IDX.length;
+    el['btn-album'].textContent = '📔 MON ALBUM · ' + albumCount() + '/' + ALBUM_IDX.length;
     el['coupe-palmares'].innerHTML = coupeStats.runs
       ? '🏆 <b>' + coupeStats.trophees + '</b> trophée' + (coupeStats.trophees > 1 ? 's' : '') +
         ' · meilleure note <b>' + coupeStats.best + '</b>/100 · ' + coupeStats.runs + ' coupe' + (coupeStats.runs > 1 ? 's' : '') + ' disputée' + (coupeStats.runs > 1 ? 's' : '')
@@ -561,7 +598,8 @@
   }
   function startCoupeRun() {
     // Relancer sans avoir ouvert son pack : la carte est créditée silencieusement
-    if (packEnAttente()) collectPlayer(findPlayer(coupe.pack));
+    // (pour un pack au choix non tranché, la première des trois fait foi)
+    if (packEnAttente()) collectPlayer(findPlayer(coupe.pack || coupe.packChoices[0]));
     newCoupeRun();
     el.endcard.hidden = true;
     el['guess-zone'].style.display = 'block';
@@ -638,13 +676,24 @@
       '<span class="pc-club">' + esc(p[1]) + ' · ' + esc(p[2]) + '</span></div>';
   }
   function renderPackZone() {
-    var p = MODE === 'coupe' && coupe && coupe.done && coupe.pack ? findPlayer(coupe.pack) : null;
-    el['pack-zone'].hidden = !p;
-    if (!p) return;
+    var pending = MODE === 'coupe' && coupe && coupe.done && (coupe.pack || coupe.packChoices);
+    el['pack-zone'].hidden = !pending;
+    if (!pending) return;
     if (coupe.packOpened) {
+      var p = findPlayer(coupe.pack);
       el['btn-pack'].hidden = true;
       el['pack-card'].innerHTML = packCardHTML(p) +
         '<div class="pc-new">✨ Nouvelle carte — album ' + albumCount() + '/' + ALBUM_IDX.length + '</div>';
+      el['pack-card'].hidden = false;
+    } else if (coupe.packChoices && coupe.packRevealed) {
+      // ⚪ Pack argent révélé : 3 cartes face visible, on en GARDE une —
+      // c'est le joueur qui sait quelle carte lui fait plaisir.
+      el['btn-pack'].hidden = true;
+      el['pack-card'].innerHTML =
+        '<div class="pc-new">⚪ Pack argent — choisis <b>une</b> carte à garder :</div>' +
+        '<div class="pack-choix">' + coupe.packChoices.map(function (nm, i) {
+          return '<button type="button" class="pc-pick" data-i="' + i + '">' + packCardHTML(findPlayer(nm)) + '</button>';
+        }).join('') + '</div>';
       el['pack-card'].hidden = false;
     } else {
       el['btn-pack'].hidden = false;
@@ -653,21 +702,34 @@
       el['pack-card'].hidden = true;
     }
   }
+  function packGarde(p) { // la carte gardée rejoint l'album, quel que soit le chemin
+    coupe.pack = p[0];
+    coupe.packOpened = true;
+    collectPlayer(p);
+    saveCoupe();
+    var b = bandOf(p);
+    confetti(b === 'legende' ? 170 : b === 'or' ? 90 : 40);
+    renderPackZone();
+    el['end-album'].textContent = '📔 Ouvrir mon album (' + albumCount() + '/' + ALBUM_IDX.length + ')';
+  }
   el['btn-pack'].addEventListener('click', function () {
-    if (!coupe || !coupe.pack || coupe.packOpened) return;
-    var p = findPlayer(coupe.pack);
-    if (!p) return;
+    if (!coupe || coupe.packOpened || !(coupe.pack || coupe.packChoices)) return;
     el['btn-pack'].disabled = true;
     el['btn-pack'].classList.add('shake');
     setTimeout(function () {
-      coupe.packOpened = true;
-      collectPlayer(p);
-      saveCoupe();
-      var b = bandOf(p);
-      confetti(b === 'legende' ? 170 : b === 'or' ? 90 : 40);
-      renderPackZone();
-      el['end-album'].textContent = '📔 Ouvrir mon album (' + albumCount() + '/' + ALBUM_IDX.length + ')';
+      if (coupe.packChoices) { // argent : on révèle le choix, la carte n'est pas encore gardée
+        coupe.packRevealed = true;
+        saveCoupe();
+        renderPackZone();
+        return;
+      }
+      packGarde(findPlayer(coupe.pack));
     }, 1000);
+  });
+  el['pack-card'].addEventListener('click', function (e) {
+    var b = e.target.closest('.pc-pick');
+    if (!b || !coupe || !coupe.packChoices || coupe.packOpened) return;
+    packGarde(findPlayer(coupe.packChoices[+b.dataset.i]));
   });
   el['btn-album'].addEventListener('click', openAlbum);
   el['end-album'].addEventListener('click', openAlbum);
@@ -1182,13 +1244,15 @@
         (duel.challenger.score > 0 ? duel.challenger.score + '/' + MAX_TRIES : 'raté (X/' + MAX_TRIES + ')') + '</strong>' +
         (duel.challenger.secs != null ? ' en ' + fmtSecs(duel.challenger.secs) : '') + ' — à toi.<br>';
     }
-    // La Coupe annonce la COTE de l'adversaire (= son obscurité) — et les aides
-    // offertes d'office aux mystères pointus s'affichent dès le départ.
+    // La Coupe annonce la BANDE de l'adversaire (💎/🟡/⚪) — le frisson de la
+    // rareté sans dévoiler la note chiffrée (retirée en v13 : méta-info froide
+    // qui spoile). Les aides offertes d'office s'affichent dès le départ.
     var rarete = '';
     if (MODE === 'coupe' && noteOf(t)) {
-      rarete = '<span class="band-chip">🎯 Adversaire coté <strong>' + noteOf(t) + '</strong></span><br>';
+      var bd0 = BANDS[bandOf(t)];
+      rarete = '<span class="band-chip band-' + bandOf(t) + '">' + bd0.icon + ' Adversaire <strong>' + bd0.adj + '</strong></span><br>';
     }
-    var a0 = aides(t), offert = [];
+    var a0 = aidesFor(t), offert = [];
     if (a0.champ === 0) offert.push('🏟️ il joue en <strong>' + esc(t[2]) + '</strong>');
     if (a0.club === 0) offert.push('👕 au <strong>' + esc(t[1]) + '</strong>');
     el['start-hint'].innerHTML = '<span class="mini-jersey">' + jerseySVG(t, true) + '</span>' +
@@ -1197,21 +1261,45 @@
       (extra ? '<br>' + extra : '') + '</span>';
     el['start-hint'].style.display = isDone() ? 'none' : 'flex';
   }
-  // Grille d'aides : plus le mystère est OBSCUR (note basse), plus le jeu aide —
-  // c'est ce qui rend ~7 700 joueurs devinables. Champ/club à 0 = offert dès le
-  // départ (affiché dans l'indice de départ). Les stars gardent le régime sec.
+  // Grille d'aides : plus le mystère est obscur (note basse), plus le jeu aide.
+  // Champ/club à 0 = offert dès le départ (affiché dans l'indice de départ).
+  // Les stars gardent le régime sec. Règle v13 : TOUT mystère doit finir par
+  // converger (init puis pendu partout) — la ressource décide jusqu'où on va,
+  // jamais la connaissance pure.
   function aides(t) {
     var n = noteOf(t);
-    if (t[8] === 1 || !n || n >= 84) return { champ: Infinity, club: Infinity, init: 4, pendu: Infinity };
-    if (n >= 80) return { champ: 2, club: 4, init: 4, pendu: Infinity };
-    if (n >= 76) return { champ: 1, club: 3, init: 4, pendu: Infinity };
-    if (n >= 71) return { champ: 0, club: 2, init: 3, pendu: Infinity };
-    return { champ: 0, club: 0, init: 2, pendu: 4 };
+    if (t[8] === 1 || !n || n >= 84) return { champ: Infinity, club: Infinity, init: 4, pendu: 6 };
+    if (n >= 80) return { champ: 2, club: 4, init: 4, pendu: 6 };
+    return { champ: 1, club: 3, init: 3, pendu: 5 };
   }
-  function pendu(nom) {
-    return nom.split(' ').map(function (w) {
-      var k = Math.ceil(w.length / 2);
-      return w.slice(0, k) + '·'.repeat(Math.max(0, w.length - k));
+  // En Coupe (v13), les aides dépendent du TOUR, pas de la note : la demi pioche
+  // dans le même vivier que 8es/quarts mais aide moins — c'est ça, son cran de
+  // difficulté. La finale (💎 connue de tous) se joue quasi à sec.
+  var AIDES_COUPE = [
+    { champ: Infinity, club: Infinity, init: 3, pendu: 5 }, // 16es · or 84-86
+    { champ: 2, club: Infinity, init: 3, pendu: 5 },        // 8es · argent 82-83
+    { champ: 1, club: 3, init: 3, pendu: 5 },               // quarts · argent 80-81
+    { champ: 2, club: 4, init: 4, pendu: 6 },               // demi · tout l'argent, aides réduites
+    { champ: Infinity, club: Infinity, init: 4, pendu: 6 }  // finale · légende 87+
+  ];
+  function aidesFor(t) {
+    if (MODE === 'coupe' && coupe && !coupe.done) return AIDES_COUPE[Math.min(coupe.round, 4)];
+    return aides(t);
+  }
+  // Pendu progressif : moitié du nom au seuil, puis une lettre de plus par
+  // essai raté — aucun tour n'est jamais un mur.
+  function pendu(nom, extra) {
+    var mots = nom.split(' ');
+    var vus = mots.map(function (w) { return Math.ceil(w.length / 2); });
+    var e = extra || 0;
+    while (e > 0) {
+      var i = -1;
+      for (var j = 0; j < mots.length; j++) if (vus[j] < mots[j].length && (i === -1 || vus[i] > vus[j])) i = j;
+      if (i === -1) break; // tout est révélé
+      vus[i]++; e--;
+    }
+    return mots.map(function (w, j) {
+      return w.slice(0, vus[j]) + '·'.repeat(Math.max(0, w.length - vus[j]));
     }).join(' ');
   }
   function renderHint() {
@@ -1219,14 +1307,14 @@
     if (!isDone() && !(MODE === 'duel' && !duel)) {
       var t = target();
       var n = guesses().length;
-      var a = aides(t);
+      var a = aidesFor(t);
       if (a.champ > 0 && n >= a.champ) show.push('🏟️ Coup de pouce : il joue en ' + t[2] + '.');
       if (a.club > 0 && n >= a.club) show.push('👕 Son club : ' + t[1] + '.');
       if (n >= a.init) {
         var initials = t[0].split(' ').map(function (w) { return w.charAt(0) + '.'; }).join(' ');
         show.push('🕵️ Ses initiales : « ' + initials + ' »');
       }
-      if (n >= a.pendu) show.push('🔤 Son nom : « ' + pendu(t[0]) + ' »');
+      if (n >= a.pendu) show.push('🔤 Son nom : « ' + pendu(t[0], n - a.pendu) + ' »');
     }
     if (show.length) { el.hint.textContent = show.join('  ·  '); el.hint.hidden = false; }
     else el.hint.hidden = true;
@@ -1495,7 +1583,7 @@
     jour.done = true; jour.won = won;
     if (jour.t0) jour.secs = Math.round((Date.now() - jour.t0) / 1000);
     save('jm-' + DAY, JSON.stringify(jour));
-    if (won) confetti(90);
+    if (won) { confetti(90); collectPlayer(TARGET_JOUR); }
     statsJour.played += 1;
     if (won) {
       var consecutive = statsJour.lastWin && daysBetween(statsJour.lastWin, DAY) === 1;
@@ -1585,6 +1673,7 @@
   }
   function marathonWin() {
     var t = target();
+    collectPlayer(t); // v13 : tout joueur deviné colle sa vignette (tous modes)
     if (ranked()) { mday.serie += 1; mday.g = []; }
     else { run.serie += 1; run.target = pickPracticeTarget()[0]; run.g = []; }
     saveMarathonState();
@@ -1615,7 +1704,7 @@
     duel.done = true; duel.won = won;
     if (duel.secs == null && duel.t0) duel.secs = Math.round((Date.now() - duel.t0) / 1000);
     saveDuel();
-    if (won) confetti(90);
+    if (won) { confetti(90); collectPlayer(duel.target); }
     showEnd();
   }
   function duelLink() {
