@@ -278,7 +278,7 @@
    'salon-pseudo', 'salon-num', 'salon-couleurs', 'salon-avatar', 'btn-salon-ok', 'btn-salon-annuler',
    'tab-coupe', 'coupe-intro', 'btn-coupe-new', 'coupe-palmares', 'coupe-bar', 'coupe-rounds', 'coupe-budget',
    'btn-coupe-abandon', 'btn-album', 'album-panel', 'album-grid', 'album-count', 'btn-album-close', 'alb-toggle',
-   'btn-succes', 'succes-panel', 'succes-grid', 'succes-count', 'btn-succes-close', 'end-succes',
+   'btn-succes', 'succes-panel', 'succes-grid', 'succes-count', 'btn-succes-close', 'end-succes', 'hud-album', 'hud-succes',
    'end-note', 'end-album', 'pack-zone', 'btn-pack', 'pack-card'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
@@ -892,8 +892,10 @@
   });
   el['btn-album'].addEventListener('click', openAlbum);
   el['end-album'].addEventListener('click', openAlbum);
+  el['hud-album'].addEventListener('click', openAlbum);
   el['btn-album-close'].addEventListener('click', closeAlbum);
   el['btn-succes'].addEventListener('click', openSucces);
+  el['hud-succes'].addEventListener('click', openSucces);
   el['btn-succes-close'].addEventListener('click', closeSucces);
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
