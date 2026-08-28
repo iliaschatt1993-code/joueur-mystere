@@ -1,6 +1,21 @@
 (function () {
   'use strict';
 
+  // 🧹 Remise à zéro complète via joueurmystere.com/?reset — efface toutes les
+  // clés jm-* (album, coupe, club, intro vue…) puis repart comme un nouveau
+  // joueur. Le paramètre est retiré de l'URL pour qu'un refresh ne re-reset pas.
+  if (/[?&]reset\b/.test(location.search)) {
+    try {
+      var _aEffacer = [];
+      for (var _r = 0; _r < localStorage.length; _r++) {
+        var _k0 = localStorage.key(_r);
+        if (_k0 && _k0.indexOf('jm-') === 0) _aEffacer.push(_k0);
+      }
+      _aEffacer.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) { /* stockage indisponible : rien à effacer */ }
+    history.replaceState(null, '', location.pathname + location.hash);
+  }
+
   var DATA = window.JM_DATA;
   var CFG = window.JM_CONFIG || {};
   var SITE = 'https://joueurmystere.com/';
