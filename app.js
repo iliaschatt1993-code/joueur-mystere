@@ -278,8 +278,10 @@
    'salon-pseudo', 'salon-num', 'salon-couleurs', 'salon-avatar', 'btn-salon-ok', 'btn-salon-annuler',
    'tab-coupe', 'coupe-intro', 'btn-coupe-new', 'coupe-palmares', 'coupe-bar', 'coupe-rounds', 'coupe-budget',
    'btn-coupe-abandon', 'btn-album', 'album-panel', 'album-grid', 'album-count', 'btn-album-close', 'alb-toggle',
-   'btn-succes', 'succes-panel', 'succes-grid', 'succes-count', 'btn-succes-close', 'end-succes', 'hud-album', 'hud-succes',
-   'end-note', 'end-album', 'pack-zone', 'btn-pack', 'pack-card'].forEach(function (id) {
+   'btn-succes', 'succes-panel', 'succes-grid', 'succes-count', 'btn-succes-close', 'end-succes',
+   'end-note', 'end-album', 'pack-zone', 'btn-pack', 'pack-card',
+   'home', 'btn-home', 'home-coupe', 'home-defi', 'home-coupe-note', 'home-defi-note',
+   'defi-intro', 'defi-mises', 'layout'].forEach(function (id) {
     el[id] = document.getElementById(id);
   });
   el['data-count'].textContent = DATA.length.toLocaleString('fr-BE');
@@ -403,6 +405,7 @@
   // run — même perdue — se termine par une note sur 100. C'est ce qui donne envie
   // de relancer (« j'étais en demi ! »), là où la survie infinie finit toujours mal.
   var COUPE_BUDGET = 20; // pour les 5 tours : la vraie ressource du mode
+  var COUPE_REFLEX = 75; // secondes de réflexion par essai (anti-triche v19)
   // Le budget effectif de la run passe par ici : le joker « réserve » l'étend.
   function coupeBudget() { return COUPE_BUDGET + (coupe && coupe.joker === 'reserve' ? 2 : 0); }
   var COUPE_ROUNDS = [
@@ -446,6 +449,40 @@
     }
     return out.length ? out : STAR_IDX.slice(); // vieux data.js sans notes : repli stars
   });
+  // ── ⚡ DÉFI DU JOUR : un mystère quotidien PERSONNEL (seed uid+date : personne
+  // n'a le même, insposable), chronométré, avec une MISE choisie avant l'indice.
+  // La mise règle les aides + le temps + la bande de la carte garantie en cas de
+  // victoire. C'est la seule source de 💎 garantie hors pack de champion —
+  // calibrage simulé le 29/08 : ~14 victoires 💎 avant sa 1re carte ≥90, bande
+  // légende complète en ~3 mois même à 60 % de réussite.
+  var DEFI_IDX = (function () { // vivier ≥ or (84+) : des mystères qu'on peut trouver de tête
+    var out = [];
+    for (var i = 0; i < DATA.length; i++) {
+      if (noteOf(DATA[i]) >= NOTE_OR && findPlayer(DATA[i][0]) === DATA[i]) out.push(i);
+    }
+    return out.length ? out : STAR_IDX.slice();
+  })();
+  var DEFI_MISES = {
+    blanc:   { icon: '⚪', nom: 'Tranquille', secs: 240, band: 0, ordre: 1,
+               d1: 'Aides normales · ⏱ 4 min', d2: 'Gain : carte ⚪ argent',
+               aides: { champ: 1, club: 3, init: 4, pendu: 5 } },
+    or:      { icon: '🟡', nom: 'Audacieux', secs: 180, band: 1, ordre: 2,
+               d1: 'Aides tardives · ⏱ 3 min', d2: 'Gain : carte 🟡 or',
+               aides: { champ: 2, club: 4, init: 5, pendu: Infinity } },
+    diamant: { icon: '💎', nom: 'Sans filet', secs: 120, band: 2, ordre: 3,
+               d1: 'Aucune aide · ⏱ 2 min', d2: 'Gain : carte 💎 LÉGENDE',
+               aides: { champ: Infinity, club: Infinity, init: Infinity, pendu: Infinity } }
+  };
+  var defi = loadJSON('jm-defi-' + DAY, null);
+  // Cible disparue (base régénérée) : on retire l'état, il sera retiré à l'identique
+  if (defi && !findPlayer(defi.target)) defi = null;
+  var defiStats = loadJSON('jm-defi-stats', { played: 0, wins: 0, winsDiamant: 0, streak: 0, maxStreak: 0, lastWin: null });
+  function saveDefi() { save('jm-defi-' + DAY, JSON.stringify(defi)); }
+  function newDefiState() {
+    var rng = mulberry32(fnv('defi:' + UID + ':' + DAY));
+    defi = { v: 1, target: DATA[DEFI_IDX[Math.floor(rng() * DEFI_IDX.length)]][0], mise: null, g: [], done: false, won: false };
+    saveDefi();
+  }
   var coupeRecent = loadJSON('jm-coupe-recent', []);
   function drawCoupeTarget(round, dejaPris) {
     var pool = TOUR_IDX[round].filter(function (i) { return dejaPris.indexOf(DATA[i][0]) === -1; });
@@ -561,6 +598,12 @@
       cond: function () { return coupeStats.runs >= 50; } },
     { id: 'centenaire', icon: '💼', nom: 'Le centenaire', desc: 'Disputer 100 Coupes',
       cond: function () { return coupeStats.runs >= 100; } },
+    { id: 'defi-premier', icon: '⚡', nom: 'Relevé !', desc: 'Réussir son premier Défi du jour',
+      cond: function () { return defiStats.wins >= 1; } },
+    { id: 'defi-diamant', icon: '🎰', nom: 'Le sans-filet', desc: 'Réussir un défi 💎 (aucune aide, 2 min)',
+      cond: function () { return defiStats.winsDiamant >= 1; } },
+    { id: 'defi-semaine', icon: '📅', nom: 'La semaine parfaite', desc: '7 défis réussis d’affilée',
+      cond: function () { return defiStats.maxStreak >= 7; } },
     { id: 'collectionneur', icon: '📔', nom: 'Le collectionneur', desc: '25 cartes dans l’album',
       cond: function () { return albumCount() >= 25; } },
     { id: 'vitrine', icon: '🗄️', nom: 'La vitrine', desc: '100 cartes dans l’album',
@@ -636,6 +679,7 @@
     var vignette = collectPlayer(t);
     coupe.used += coupe.g.length;
     coupe.g = [];
+    delete coupe.tDeadline; // la réflexion du tour suivant repartira après la bannière
     if (coupe.round >= 4) { // 🏆 finale gagnée
       coupe.done = true; coupe.won = true;
       finalizeCoupe();
@@ -661,6 +705,19 @@
     finalizeCoupe();
     renderCoupeBar();
     showEnd();
+  }
+  // ⏳ Réflexion écoulée : UN essai du budget part, la réflexion repart de zéro.
+  // Une absence (onglet caché, veille) ne peut coûter qu'un seul essai : le tick
+  // ne tourne pas pendant l'absence, donc un seul dépassement est constaté au retour.
+  function burnReflexion() {
+    if (!coupe || coupe.done) return;
+    coupe.used += 1;
+    coupe.tDeadline = Date.now() + COUPE_REFLEX * 1000;
+    saveCoupe();
+    if (coupeBudget() - coupe.used - coupe.g.length <= 0) { coupe.sec = true; endCoupe(); return; }
+    renderCoupeBar();
+    renderTries();
+    el.notice.textContent = '⏳ 75 s de réflexion écoulées — 1 essai consommé.';
   }
   function renderCoupeBar() {
     var active = MODE === 'coupe' && coupe && !coupe.done;
@@ -743,6 +800,66 @@
     el['btn-coupe-abandon'].textContent = 'Abandonner';
     endCoupe();
   });
+  // ── ⚡ Défi du jour : écran de mise, fin de défi, carte garantie ──
+  function renderDefiIntro() {
+    var visible = MODE === 'defi' && defi && !defi.mise && !defi.done;
+    el['defi-intro'].hidden = !visible;
+    if (!visible) return;
+    var keys = Object.keys(DEFI_MISES).sort(function (a, b) { return DEFI_MISES[a].ordre - DEFI_MISES[b].ordre; });
+    el['defi-mises'].innerHTML = keys.map(function (k) {
+      var m = DEFI_MISES[k];
+      return '<button class="joker-card" data-m="' + k + '"><span class="ji">' + m.icon +
+        '</span><b>' + m.nom + '</b><span class="jd">' + m.d1 + '</span><span class="jd">' + m.d2 + '</span></button>';
+    }).join('');
+  }
+  function startDefi(k) {
+    if (!defi || defi.mise || defi.done || !DEFI_MISES[k]) return;
+    defi.mise = k;
+    // Chrono ABSOLU et persisté dès la mise : fermer la page ne l'arrête pas
+    // (c'est l'anti-triche du mode — pas de recherche tranquille à côté).
+    defi.deadline = Date.now() + DEFI_MISES[k].secs * 1000;
+    saveDefi();
+    el['defi-intro'].hidden = true;
+    el['guess-zone'].style.display = 'block';
+    renderBoard(); renderStartHint(); renderHint();
+    el['guess-input'].focus();
+  }
+  el['defi-mises'] && el['defi-intro'].addEventListener('click', function (e) {
+    var b = e.target.closest('.joker-card');
+    if (b) startDefi(b.dataset.m);
+  });
+  // La carte garantie : bande de la mise, tirée parmi les manquantes (pondérée
+  // 1,7^Δnote comme les packs) ; bande épuisée → on monte, jamais de déclassement.
+  function defiDrawReward(bi) {
+    var ordre = [];
+    for (var j = bi; j < 3; j++) ordre.push(j);
+    for (var j2 = bi - 1; j2 >= 0; j2--) ordre.push(j2);
+    for (var o = 0; o < ordre.length; o++) {
+      var n = drawFromBand(ordre[o], []);
+      if (n) return n;
+    }
+    return null; // album complet
+  }
+  function finishDefi(won, timeout) {
+    defi.done = true; defi.won = !!won; defi.timeout = !!timeout;
+    var t = findPlayer(defi.target);
+    if (won) {
+      collectPlayer(t); // le mystère colle sa vignette…
+      defi.reward = defiDrawReward(DEFI_MISES[defi.mise].band); // …et la carte garantie attend son ouverture
+      if (defi.mise === 'diamant') defiStats.winsDiamant += 1;
+      var suite = defiStats.lastWin && daysBetween(defiStats.lastWin, DAY) === 1;
+      defiStats.streak = suite ? defiStats.streak + 1 : 1;
+      defiStats.maxStreak = Math.max(defiStats.maxStreak, defiStats.streak);
+      defiStats.wins += 1;
+      defiStats.lastWin = DAY;
+    } else defiStats.streak = 0;
+    defiStats.played += 1;
+    save('jm-defi-stats', JSON.stringify(defiStats));
+    defi.succesNew = (defi.succesNew || []).concat(checkSucces());
+    saveDefi();
+    if (won) confetti(90);
+    showEnd();
+  }
   // 📔 Album Panini : une section par championnat (ou par pays), les stars
   // trouvées en vignette maillot, les manquantes en maillot gris « ? ».
   function stickerHTML(p) {
@@ -808,7 +925,7 @@
   }
   // Les succès de la run en cours, affichés sur la carte de fin
   function renderEndSucces() {
-    var list = (coupe && coupe.succesNew) || [];
+    var list = (MODE === 'defi' ? (defi && defi.succesNew) : (coupe && coupe.succesNew)) || [];
     el['end-succes'].innerHTML = list.map(function (id) {
       var s = null;
       SUCCES_DEFS.forEach(function (d) { if (d.id === id) s = d; });
@@ -828,6 +945,26 @@
       '<span class="pc-club">' + esc(p[1]) + ' · ' + esc(p[2]) + '</span></div>';
   }
   function renderPackZone() {
+    // ⚡ Défi gagné : la carte garantie s'ouvre comme un pack (même cérémonie)
+    if (MODE === 'defi') {
+      var pd = defi && defi.done && defi.won && defi.reward;
+      el['pack-zone'].hidden = !pd;
+      if (!pd) return;
+      if (defi.rewardOpened) {
+        el['btn-pack'].hidden = true;
+        el['pack-card'].innerHTML = packCardHTML(findPlayer(defi.reward)) +
+          '<div class="pc-new">✨ Carte garantie de ta mise — album ' + albumCount() + '/' + ALBUM_IDX.length + '</div>';
+        el['pack-card'].hidden = false;
+      } else {
+        el['btn-pack'].textContent = '🎁 OUVRIR TA RÉCOMPENSE';
+        el['btn-pack'].hidden = false;
+        el['btn-pack'].disabled = false;
+        el['btn-pack'].classList.remove('shake');
+        el['pack-card'].hidden = true;
+      }
+      return;
+    }
+    el['btn-pack'].textContent = '📦 OUVRIR TON PACK';
     var pending = MODE === 'coupe' && coupe && coupe.done && (coupe.pack || coupe.packChoices);
     el['pack-zone'].hidden = !pending;
     if (!pending) return;
@@ -868,6 +1005,26 @@
     el['end-album'].textContent = '📔 Ouvrir mon album (' + albumCount() + '/' + ALBUM_IDX.length + ')';
   }
   el['btn-pack'].addEventListener('click', function () {
+    if (MODE === 'defi') { // ⚡ la carte garantie du défi
+      if (!defi || !defi.reward || defi.rewardOpened) return;
+      var d0 = defi;
+      el['btn-pack'].disabled = true;
+      el['btn-pack'].classList.add('shake');
+      setTimeout(function () {
+        if (defi !== d0 || defi.rewardOpened) return;
+        defi.rewardOpened = true;
+        var pR = findPlayer(defi.reward);
+        collectPlayer(pR);
+        defi.succesNew = (defi.succesNew || []).concat(checkSucces());
+        saveDefi();
+        var bR = bandOf(pR);
+        confetti(bR === 'legende' ? 170 : bR === 'or' ? 90 : 40);
+        renderPackZone();
+        renderEndSucces();
+        el['end-album'].textContent = '📔 Ouvrir mon album (' + albumCount() + '/' + ALBUM_IDX.length + ')';
+      }, 1000);
+      return;
+    }
     if (!coupe || coupe.packOpened || !(coupe.pack || coupe.packChoices)) return;
     var run = coupe; // photo de la run : le timeout peut se déclencher en retard
     el['btn-pack'].disabled = true;
@@ -892,10 +1049,8 @@
   });
   el['btn-album'].addEventListener('click', openAlbum);
   el['end-album'].addEventListener('click', openAlbum);
-  el['hud-album'].addEventListener('click', openAlbum);
   el['btn-album-close'].addEventListener('click', closeAlbum);
   el['btn-succes'].addEventListener('click', openSucces);
-  el['hud-succes'].addEventListener('click', openSucces);
   el['btn-succes-close'].addEventListener('click', closeSucces);
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -1264,18 +1419,21 @@
     if (MODE === 'jour') return TARGET_JOUR;
     if (MODE === 'duel') return duel ? duel.target : TARGET_JOUR;
     if (MODE === 'coupe') return coupe ? coupeTarget() : TARGET_JOUR;
+    if (MODE === 'defi') return defi ? findPlayer(defi.target) : TARGET_JOUR;
     return ranked() ? mdayTarget() : findPlayer(run.target);
   }
   function guesses() {
     if (MODE === 'jour') return jour.g;
     if (MODE === 'duel') return duel ? duel.g : [];
     if (MODE === 'coupe') return coupe ? coupe.g : [];
+    if (MODE === 'defi') return defi ? defi.g : [];
     return ranked() ? mday.g : run.g;
   }
   function isDone() {
     if (MODE === 'jour') return jour.done;
     if (MODE === 'duel') return !duel || duel.done;
     if (MODE === 'coupe') return !coupe || coupe.done;
+    if (MODE === 'defi') return !defi || defi.done;
     return marathonOver;
   }
   function serieActuelle() { return ranked() ? mday.serie : (run ? run.serie : 0); }
@@ -1407,12 +1565,13 @@
     else if (jk === 'boussole') extra = '🃏 Joker : il est <strong>' + POS_LABEL[t[6]] + '</strong>.';
     else if (jk === 'reserve') extra = '🃏 Joker : <strong>+2 essais</strong> de budget.';
     else if (jk === 'souffleur') extra = '🃏 Joker : les <strong>initiales</strong> dès le 1er essai raté.';
-    // Défi reçu : annoncer l'adversaire et le score à battre dès l'arrivée,
+    // Duel reçu : annoncer l'adversaire et le score à battre dès l'arrivée,
     // pas seulement au verdict — c'est le crochet qui lance la partie.
-    var defi = '';
+    // (⚠️ ne pas nommer cette variable « defi » : elle masquerait l'état global du Défi du jour)
+    var duelTxt = '';
     if (MODE === 'duel' && duel && duel.challenger && !duel.done) {
       var advN = duel.challenger.name ? esc(duel.challenger.name) : 'Ton adversaire';
-      defi = '⚔️ <strong>' + advN + ' te défie !</strong> Son score : <strong>' +
+      duelTxt = '⚔️ <strong>' + advN + ' te défie !</strong> Son score : <strong>' +
         (duel.challenger.score > 0 ? duel.challenger.score + '/' + MAX_TRIES : 'raté (X/' + MAX_TRIES + ')') + '</strong>' +
         (duel.challenger.secs != null ? ' en ' + fmtSecs(duel.challenger.secs) : '') + ' — à toi.<br>';
     }
@@ -1420,15 +1579,20 @@
     // rareté sans dévoiler la note chiffrée (retirée en v13 : méta-info froide
     // qui spoile). Les aides offertes d'office s'affichent dès le départ.
     var rarete = '';
-    if (MODE === 'coupe' && noteOf(t)) {
+    if ((MODE === 'coupe' || MODE === 'defi') && noteOf(t)) {
       var bd0 = BANDS[bandOf(t)];
       rarete = '<span class="band-chip band-' + bandOf(t) + '">' + bd0.icon + ' Adversaire <strong>' + bd0.adj + '</strong></span><br>';
+    }
+    // ⚡ Défi : rappel de la mise (elle fige les aides et la récompense)
+    if (MODE === 'defi' && defi && defi.mise) {
+      var mi0 = DEFI_MISES[defi.mise];
+      extra = mi0.icon + ' Mise <strong>' + mi0.nom.toLowerCase() + '</strong> — ' + mi0.d2.replace('Gain : ', 'gain : ') + '.';
     }
     var a0 = aidesFor(t), offert = [];
     if (a0.champ === 0) offert.push('🏟️ il joue en <strong>' + esc(t[2]) + '</strong>');
     if (a0.club === 0) offert.push('👕 au <strong>' + esc(t[1]) + '</strong>');
     el['start-hint'].innerHTML = '<span class="mini-jersey">' + jerseySVG(t, true) + '</span>' +
-      '<span>' + defi + rarete + '🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.' +
+      '<span>' + duelTxt + rarete + '🧭 Indice de départ : le mystère est <strong>' + LINE_PHRASE[POS_LINE[t[6]]] + '</strong>.' +
       (offert.length ? '<br>' + offert.join(' · ') + '.' : '') +
       (extra ? '<br>' + extra : '') + '</span>';
     el['start-hint'].style.display = isDone() ? 'none' : 'flex';
@@ -1460,6 +1624,8 @@
     { champ: 3, club: Infinity, init: 4, pendu: 5 }         // finale · 💎 connue de tous — presque sec
   ];
   function aidesFor(t) {
+    // ⚡ Défi : les aides sont celles de la MISE, pas de la note du mystère
+    if (MODE === 'defi' && defi && defi.mise) return DEFI_MISES[defi.mise].aides;
     if (MODE === 'coupe' && coupe && !coupe.done) {
       var a = AIDES_COUPE[Math.min(coupe.round, 4)];
       // 🃏 « Le souffleur » : les initiales tombent dès le premier essai raté
@@ -1628,16 +1794,18 @@
 
   // ── Fin de partie ──
   var countdownTimer = null;
+  var countdownPrefix = '⏳ Nouveau mystère et nouveau marathon classé dans ';
   function tickCountdown() {
     var now = new Date();
     var mid = new Date(now); mid.setHours(24, 0, 0, 0);
     var s = Math.max(0, Math.floor((mid - now) / 1000));
-    el.countdown.textContent = '⏳ Nouveau mystère et nouveau marathon classé dans ' +
+    el.countdown.textContent = countdownPrefix +
       String(Math.floor(s / 3600)).padStart(2, '0') + ':' +
       String(Math.floor((s % 3600) / 60)).padStart(2, '0') + ':' +
       String(s % 60).padStart(2, '0');
   }
-  function startCountdown() {
+  function startCountdown(prefix) {
+    countdownPrefix = prefix || '⏳ Nouveau mystère et nouveau marathon classé dans ';
     el.countdown.style.display = 'block';
     tickCountdown();
     if (!countdownTimer) countdownTimer = setInterval(tickCountdown, 1000);
@@ -1666,8 +1834,33 @@
         c.textContent = '⏱ ' + fmtSecs((Date.now() - (duel.t0 || Date.now())) / 1000);
       }
     } else if (MODE === 'coupe') {
+      // ⏳ Anti-triche v19 : 75 s de RÉFLEXION par essai. Au-delà, un essai du
+      // budget est consommé et la réflexion repart. La deadline est absolue et
+      // persistée ; comme le tick ne tourne pas onglet caché, une absence ne
+      // coûte jamais plus d'UN essai au retour — googler à côté, si.
       c.classList.remove('low', 'mara');
-      c.hidden = true; // la Coupe se joue sans chrono : la ressource, c'est le budget d'essais
+      if (!coupe || coupe.done || coupeDraftPending() || !el['round-banner'].hidden) { c.hidden = true; return; }
+      if (!coupe.tDeadline) { coupe.tDeadline = Date.now() + COUPE_REFLEX * 1000; saveCoupe(); }
+      var remC = (coupe.tDeadline - Date.now()) / 1000;
+      if (remC <= 0) { c.hidden = true; burnReflexion(); return; }
+      c.hidden = false;
+      c.textContent = '🧠 ' + fmtSecs(remC);
+      c.classList.add('mara');
+      c.style.setProperty('--t', Math.min(1, remC / COUPE_REFLEX));
+      c.classList.toggle('low', remC <= 15);
+    } else if (MODE === 'defi') {
+      c.classList.remove('low', 'mara');
+      if (!defi || !defi.mise || defi.done || !defi.deadline) { c.hidden = true; return; }
+      var remD = (defi.deadline - Date.now()) / 1000;
+      if (remD <= 0) { c.hidden = true; finishDefi(false, true); return; }
+      var limD = DEFI_MISES[defi.mise].secs;
+      c.hidden = false;
+      c.textContent = '⏳ ' + fmtSecs(remD);
+      c.classList.add('mara');
+      c.style.setProperty('--t', Math.min(1, remD / limD));
+      c.classList.toggle('low', remD <= 20);
+    } else if (MODE === 'home') {
+      c.hidden = true;
     } else {
       var st = marathonState();
       var lim = timeLimit();
@@ -1741,6 +1934,18 @@
       el['end-album'].hidden = false;
       el['btn-again'].hidden = false;
       el['btn-again'].textContent = 'NOUVELLE COUPE';
+    } else if (MODE === 'defi') {
+      var mi = DEFI_MISES[defi.mise];
+      if (defi.won) el['end-verdict'].textContent = '⚡ DÉFI ' + mi.icon + ' RELEVÉ EN ' + defi.g.length + '/' + MAX_TRIES + ' !';
+      else if (defi.timeout) el['end-verdict'].textContent = '⏱ Temps écoulé — c’était :';
+      else el['end-verdict'].textContent = 'Raté… c’était :';
+      el['end-streak'].textContent = (defi.won && defiStats.streak > 1 ? '🔥 ' + defiStats.streak + ' défis d’affilée' : '') +
+        (defi.won ? '' : (defiStats.streak === 0 && defiStats.played > 1 ? 'La série s’arrête là — demain, revanche.' : ''));
+      renderPackZone();
+      renderEndSucces();
+      el['end-album'].textContent = '📔 Ouvrir mon album (' + albumCount() + '/' + ALBUM_IDX.length + ')';
+      el['end-album'].hidden = false;
+      startCountdown('⏳ Nouveau défi dans ');
     } else { // duel
       var mine = duel.won ? duel.g.length : 0;
       if (duel.challenger) {
@@ -1940,6 +2145,7 @@
     if (isDone() || !p || el['round-banner'].hidden === false) return;
     if (MODE === 'duel' && !duel) return;
     if (MODE === 'coupe' && coupeDraftPending()) return; // le joker d'abord
+    if (MODE === 'defi' && (!defi || !defi.mise)) return; // la mise d'abord
     var done = guesses().map(norm);
     if (done.indexOf(norm(p[0])) !== -1) { el.notice.textContent = 'Déjà essayé !'; return; }
     el.notice.textContent = '';
@@ -1950,7 +2156,8 @@
     guesses().push(p[0]);
     if (MODE === 'jour') save('jm-' + DAY, JSON.stringify(jour));
     else if (MODE === 'duel') saveDuel();
-    else if (MODE === 'coupe') saveCoupe();
+    else if (MODE === 'coupe') { coupe.tDeadline = Date.now() + COUPE_REFLEX * 1000; saveCoupe(); } // essai joué : la réflexion repart
+    else if (MODE === 'defi') saveDefi();
     else if (ranked()) save('jm-mday-' + DAY, JSON.stringify(mday));
     else save('jm-run', JSON.stringify(run));
 
@@ -1967,6 +2174,8 @@
         if (win) finishDuel(true); else if (out) finishDuel(false); else renderHint();
       } else if (MODE === 'coupe') {
         if (win) coupeWin(); else if (out) endCoupe(); else renderHint();
+      } else if (MODE === 'defi') {
+        if (win) finishDefi(true); else if (out) finishDefi(false); else renderHint();
       } else {
         if (win) marathonWin(); else if (out) endMarathon(); else renderHint();
       }
@@ -1992,6 +2201,13 @@
       return '⚽ Joueur Mystère — La Coupe 🏆\n' +
         (coupe.won ? 'CHAMPION ! Note ' + coupe.note + '/100' : COUPE_ELIM_TITRES[coupe.round] + ' · note ' + coupe.note + '/100') +
         '\nFais mieux : ' + SITE;
+    }
+    if (MODE === 'defi' && defi && defi.done) {
+      var miS = DEFI_MISES[defi.mise];
+      return '⚡ Joueur Mystère — Défi du jour, mise ' + miS.icon + ' ' + miS.nom.toLowerCase() + '\n' +
+        (defi.won ? 'Relevé en ' + defi.g.length + '/' + MAX_TRIES + ' !' +
+          (defiStats.streak > 1 ? ' 🔥' + defiStats.streak : '') : 'Raté — demain je me venge.') +
+        '\nLe tien t’attend (personne n’a le même) : ' + SITE;
     }
     var s = endedRun ? endedRun.serie : serieActuelle();
     var lbl = endedRun && endedRun.ranked ? 'Marathon du jour n°' + PUZZLE_NUM : 'Marathon (entraînement)';
@@ -2071,6 +2287,47 @@
     if (!e.target.closest('#guess-zone')) el.suggestions.hidden = true;
   });
 
+  // ── 🏠 Navigation en étoile (v19) : l'accueil principal ↔ les modes ──
+  // « ‹ Menu » ramène toujours à l'accueil ; l'album et les succès y vivent.
+  function renderHome() {
+    el['btn-album'].textContent = '📔 MON ALBUM · ' + albumCount() + '/' + ALBUM_IDX.length;
+    el['btn-succes'].textContent = '🏅 SUCCÈS · ' + succesCount() + '/' + SUCCES_DEFS.length;
+    if (coupe && !coupe.done) {
+      var rest = coupeBudget() - coupe.used - coupe.g.length;
+      el['home-coupe-note'].textContent = '▶ Run en cours — ' + COUPE_ROUNDS[coupe.round].court + ' · ' + rest + ' essai' + (rest > 1 ? 's' : '') + ' restants';
+    } else {
+      el['home-coupe-note'].textContent = coupeStats.runs
+        ? '🏆 ' + coupeStats.trophees + ' trophée' + (coupeStats.trophees > 1 ? 's' : '') + ' · meilleure note ' + (coupeStats.best || 0) + '/100'
+        : 'Personne au palmarès — sois le premier champion';
+    }
+    if (defi && defi.done) {
+      el['home-defi-note'].textContent = defi.won
+        ? '✅ Relevé ' + DEFI_MISES[defi.mise].icon + (defiStats.streak > 1 ? ' · 🔥 ' + defiStats.streak + ' d’affilée' : '') + ' — nouveau défi à minuit'
+        : '❌ Raté — nouveau défi à minuit';
+    } else if (defi && defi.mise) {
+      el['home-defi-note'].textContent = '⏱ DÉFI EN COURS — le chrono tourne !';
+    } else {
+      el['home-defi-note'].textContent = '● À relever' + (defiStats.streak > 1 ? ' · 🔥 ' + defiStats.streak + ' d’affilée' : '');
+    }
+  }
+  function showHome() {
+    MODE = 'home';
+    el['round-banner'].hidden = true;
+    el.layout.hidden = true;
+    el.home.hidden = false;
+    el['btn-home'].hidden = true;
+    renderHome();
+  }
+  function enterMode(m) {
+    el.home.hidden = true;
+    el.layout.hidden = false;
+    el['btn-home'].hidden = false;
+    setMode(m);
+  }
+  el['btn-home'].addEventListener('click', showHome);
+  el['home-coupe'].addEventListener('click', function () { enterMode('coupe'); });
+  el['home-defi'].addEventListener('click', function () { enterMode('defi'); });
+
   // ── Changement de mode ──
   function setMode(m) {
     MODE = m;
@@ -2079,6 +2336,7 @@
     });
     renderCoupeBar();
     renderCoupeIntro();
+    renderDefiIntro();
     el['marathon-bar'].style.display = m === 'marathon' ? 'flex' : 'none';
     if (m !== 'marathon') el['diff-picker'].hidden = true;
     el.stats.style.display = m === 'jour' ? 'flex' : 'none';
@@ -2120,6 +2378,25 @@
       el.hint.hidden = true;
       el.notes.hidden = true;
       return;
+    }
+    if (m === 'defi') {
+      if (!defi) newDefiState();
+      // Chrono écoulé pendant l'absence : le défi tombe, verdict immédiat
+      if (defi.mise && !defi.done && defi.deadline && Date.now() > defi.deadline) {
+        finishDefi(false, true);
+        return;
+      }
+      if (!defi.mise) { // la mise d'abord : l'écran du défi tient la scène
+        renderDefiIntro();
+        el['guess-zone'].style.display = 'none';
+        el.endcard.hidden = true;
+        clearBoard();
+        el.tries.innerHTML = '';
+        el['start-hint'].style.display = 'none';
+        el.hint.hidden = true;
+        el.notes.hidden = true;
+        return;
+      }
     }
     if (isDone()) showEnd(); else hideEnd();
     renderBoard();
@@ -2167,11 +2444,12 @@
   });
 
   // ── Démarrage : rendu synchrone ──
-  // v14 (recentrage) : la Coupe est le SEUL mode visible — Jour, Marathon et
-  // Duel sont en sommeil (code conservé, onglets masqués, liens #d= ignorés).
-  // Pour les réactiver : ré-afficher #modes dans index.html et restaurer ici
-  // l'aiguillage incomingDuel → setMode('duel').
-  setMode('coupe');
+  // v19 (navigation en étoile) : une partie EN COURS reprend directement (une
+  // Coupe entamée, un défi au chrono qui tourne) ; sinon, l'accueil principal.
+  // Jour, Marathon et Duel restent en sommeil (code conservé, onglets masqués).
+  if (coupe && !coupe.done) enterMode('coupe');
+  else if (defi && defi.mise && !defi.done) enterMode('defi');
+  else showHome();
   renderStatsJour();
   var appChronoTimer = setInterval(tickAppChrono, 500);
   tickAppChrono();
