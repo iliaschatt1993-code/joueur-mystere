@@ -1,3 +1,6 @@
 build-cache/
 .vercel
 .env*
+app-ios/node_modules/
+app-ios/www/
+app-ios/ios/App/App/public/

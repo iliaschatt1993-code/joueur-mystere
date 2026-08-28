@@ -1,0 +1,15 @@
+{
+  "name": "joueur-mystere-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Le Joueur Mystère — app iOS (Capacitor, mêmes fichiers que le site)",
+  "scripts": {
+    "sync-www": "node sync-www.js",
+    "build": "npm run sync-www && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0"
+  }
+}

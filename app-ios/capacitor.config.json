@@ -1,0 +1,9 @@
+{
+  "appId": "com.iliaschatt.joueurmystere",
+  "appName": "Le Joueur Mystère",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#f5ecd7"
+  }
+}

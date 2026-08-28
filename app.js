@@ -397,7 +397,9 @@
     }
     b.innerHTML = '⭐ <strong>' + esc(favClub) + '</strong> <span class="cb-match">⏳ prochain match…</span>';
     b.hidden = false;
-    fetch('/api/prochain-match?club=' + encodeURIComponent(favClub))
+    // Depuis l'app native ou un miroir, l'API vit sur le domaine ; en local elle est absente (repli)
+    var apiBase = location.hostname === 'joueurmystere.com' ? '' : 'https://joueurmystere.com';
+    fetch(apiBase + '/api/prochain-match?club=' + encodeURIComponent(favClub))
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (m) {
         b.innerHTML = '⭐ <strong>' + esc(favClub) + '</strong>' +

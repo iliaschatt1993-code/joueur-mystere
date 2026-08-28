@@ -6,6 +6,8 @@ const clubs = require('./_clubs.json');
 module.exports = async function (req, res) {
   const club = String(req.query.club || '').slice(0, 40);
   const id = clubs[club];
+  // Données publiques : l'app iOS (origine capacitor://) et les miroirs doivent pouvoir lire
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=86400');
   if (!id) { res.status(404).json({ erreur: 'club inconnu' }); return; }
   try {
