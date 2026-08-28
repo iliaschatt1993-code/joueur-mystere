@@ -3,7 +3,7 @@
 
   var DATA = window.JM_DATA;
   var CFG = window.JM_CONFIG || {};
-  var SITE = 'https://iliaschatt1993-code.github.io/joueur-mystere/';
+  var SITE = 'https://joueurmystere.com/';
   var MAX_TRIES = 6;
   var EPOCH = '2026-08-27'; // n°1 du mode jour
 

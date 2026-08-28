@@ -2,7 +2,7 @@
 
 **Le Wordle du foot, en français.** Un footballeur caché chaque jour — le même pour tout le monde — et 6 essais pour le trouver. Chaque essai compare **nation, championnat, club, poste et âge** avec le joueur mystère. Et quand le mystère du jour est tombé : le **mode Marathon**, des mystères en boucle, 90 secondes par joueur.
 
-**👉 Jouer : [iliaschatt1993-code.github.io/joueur-mystere](https://iliaschatt1993-code.github.io/joueur-mystere/)**
+**👉 Jouer : [joueurmystere.com](https://joueurmystere.com/)**
 
 ## Fonctionnalités
 
