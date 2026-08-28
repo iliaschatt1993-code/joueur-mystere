@@ -45,14 +45,23 @@ language plpgsql security definer set search_path = public
 as $$
 declare
   v_code text;
+  v_essais int := 0;
+  v_alpha text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; -- sans O/0/I/1 (ambigus à l'oral)
 begin
   if char_length(trim(p_nom)) not between 1 and 30 then raise exception 'nom invalide'; end if;
-  -- Code de 6 caractères sans ambiguïté (pas de O/0/I/1)
-  v_code := upper(substr(translate(encode(gen_random_bytes(8), 'base64'), 'O0Il+/=abcdefghijklmnopqrstuvwxyz', ''), 1, 6));
-  while char_length(v_code) < 6 loop
-    v_code := v_code || chr(65 + floor(random() * 26)::int);
+  loop
+    v_code := '';
+    while char_length(v_code) < 6 loop
+      v_code := v_code || substr(v_alpha, 1 + floor(random() * 32)::int, 1);
+    end loop;
+    begin
+      insert into salons (code, nom) values (v_code, trim(p_nom));
+      exit;
+    exception when unique_violation then
+      v_essais := v_essais + 1;
+      if v_essais > 5 then raise; end if;
+    end;
   end loop;
-  insert into salons (code, nom) values (v_code, trim(p_nom));
   perform salon_rejoindre(v_code, p_uid, p_pseudo, p_maillot, p_couleur);
   return v_code;
 end;
